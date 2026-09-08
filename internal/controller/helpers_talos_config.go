@@ -65,7 +65,7 @@ func getSecrets(
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal secrets bundle: %w", err)
 	}
-	err = bundle.Validate()
+	err = bundle.Validate(config.TalosVersionCurrent)
 	if err != nil {
 		return nil, fmt.Errorf("invalid secrets bundle: %w", err)
 	}

@@ -22,7 +22,7 @@
 
       n2cPkgs = nix2container.packages.${system};
 
-      vendorHash = "sha256-mKeKjiWeYPZSGAPC/KTLMLmo+7/ebVjpBmK6kgLd9rc="; # lib.fakeHash;
+      vendorHash = "sha256-ra0iwyE8PkOnf4Dib3faJZJ8VpJyMVITlofiKrQktZY=";
       version = lib.strings.trim (builtins.readFile ./VERSION);
 
       # filter the app sources to avoid spurious rebuilds
@@ -54,6 +54,7 @@
 
         # build tools
         go
+        golines
         kubernetes-controller-tools
         kubebuilder
 

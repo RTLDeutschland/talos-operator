@@ -1,4 +1,4 @@
-ARG GOIMAGE="docker.io/library/golang:1.26.1"
+ARG GOIMAGE="docker.io/library/golang:1.26.5"
 
 # Build the manager binary
 FROM ${GOIMAGE} AS builder

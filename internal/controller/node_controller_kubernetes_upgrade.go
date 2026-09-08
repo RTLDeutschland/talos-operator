@@ -167,9 +167,9 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 		enabled := true
 		switch opStatus.KubernetesComponentUpgrade.ComponentName {
 		case KubernetesComponentControllerManager:
-			enabled = !machineCfg.Machine().Controlplane().ControllerManager().Disabled()
+			enabled = machineCfg.K8sControllerManagerConfig().Enabled()
 		case KubernetesComponentScheduler:
-			enabled = !machineCfg.Machine().Controlplane().Scheduler().Disabled()
+			enabled = machineCfg.K8sSchedulerConfig().Enabled()
 		}
 		if !enabled {
 			// update our tracking information immediately
@@ -345,16 +345,16 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 		var podName string
 		switch opStatus.KubernetesComponentUpgrade.ComponentName {
 		case KubernetesComponentAPIServer:
-			targetImage = machineCfg.Cluster().APIServer().Image()
+			targetImage = machineCfg.K8sAPIServerConfig().Image()
 			podName = "kube-apiserver-" + node.Name
 		case KubernetesComponentControllerManager:
-			targetImage = machineCfg.Cluster().ControllerManager().Image()
+			targetImage = machineCfg.K8sControllerManagerConfig().Image()
 			podName = "kube-controller-manager-" + node.Name
 		case KubernetesComponentScheduler:
-			targetImage = machineCfg.Cluster().Scheduler().Image()
+			targetImage = machineCfg.K8sSchedulerConfig().Image()
 			podName = "kube-scheduler-" + node.Name
 		case KubernetesComponentKubelet:
-			targetImage = machineCfg.Machine().Kubelet().Image()
+			targetImage = machineCfg.K8sKubeletConfig().Image()
 		default:
 			err = r.updateOpStatus(
 				ctx,

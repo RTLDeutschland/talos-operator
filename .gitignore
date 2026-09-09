@@ -7,6 +7,10 @@
 bin/*
 Dockerfile.cross
 
+# Nix / CI builds
+result
+dist/
+
 # Test binary, built with `go test -c`
 *.test
 

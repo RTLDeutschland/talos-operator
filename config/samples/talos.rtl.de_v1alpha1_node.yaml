@@ -1,0 +1,9 @@
+apiVersion: talos.rtl.de/v1alpha1
+kind: Node
+metadata:
+  labels:
+    app.kubernetes.io/name: talos-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: node-sample
+spec:
+  # TODO(user): Add fields here

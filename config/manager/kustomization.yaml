@@ -1,0 +1,5 @@
+resources:
+  - manager.yaml
+images:
+  - newTag: v0.11.0
+    digest: ""

@@ -1,0 +1,6 @@
+resources:
+  - ../../config/default
+
+images:
+  - name: controller:latest
+    newName: k3d-talos-operator-e2e:5543/controller

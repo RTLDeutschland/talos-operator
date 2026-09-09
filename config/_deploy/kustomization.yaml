@@ -1,0 +1,7 @@
+resources:
+  - ../default
+images:
+  - name: controller:latest
+    newName: hub.acme.internal/talos-operator
+    newTag: dev
+    digest: "sha256:e47813d2b01347a905cbe5a480568398493de73236b65e3c97ba9e0723de5fc8"

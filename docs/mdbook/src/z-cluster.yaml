@@ -1,0 +1,115 @@
+apiVersion: talos.rtl.de/v1alpha1
+kind: Cluster
+metadata:
+  # annotations:
+  #   kubectl.kubernetes.io/last-applied-configuration: |
+  #     {"apiVersion":"talos.rtl.de/v1alpha1","kind":"Cluster","metadata":{"annotations":{},"name":"athena","namespace":"demo-talos-operator"},"spec":{"controlPlanePatches":["version: v1alpha1\nmachine:\n  network:\n    interfaces:\n      - interface: eth0\n        vip:\n          ip: 10.256.3.37\n"],"domain":"acme.internal","patchRefs":[{"key":"base.yaml","name":"talos-common-patches"},{"key":"rancher-support.yaml","name":"talos-common-patches"}],"patches":["# machine config reference here:\n# https://www.talos.dev/v1.11/reference/configuration/v1alpha1/config/\nversion: v1alpha1 # Indicates the schema used to decode the contents.\nmachine:\n  kubelet:\n    extraConfig:\n      # https://kubernetes.io/docs/concepts/architecture/garbage-collection/\n      imageMaximumGCAge: \"48h\"\n  install:\n    image: factory.talos.dev/vmware-installer/7bc843886ddac143fae1c3eddfe74664782e0aa50fdce9531070b20be5fc82ae:v1.11.5\n    disk: /dev/sda\n  network:\n    interfaces:\n      - interface: eth0\n        routes:\n          - network: 0.0.0.0/0\n            gateway: 10.256.3.1\ncluster:\n  allowSchedulingOnControlPlanes: true\n  externalCloudProvider:\n    enabled: false\n"],"secretsRef":"athena-secrets"}}
+  # creationTimestamp: "2025-11-21T13:29:42Z"
+  # generation: 45
+  name: athena
+  namespace: demo-talos-operator
+  # resourceVersion: "69933336"
+  # uid: b59df2a0-ef52-45f2-b183-858be966b59c
+spec:
+  controlPlanePatches:
+    - |
+      version: v1alpha1
+      machine:
+        network:
+          interfaces:
+            - interface: eth0
+              vip:
+                ip: 10.256.3.37
+  domain: acme.internal
+  kubernetesVersion: v1.34.3
+  options:
+    maintenanceWindow:
+      enabled: true
+      cron: 10 * * * *
+      duration: 10m
+      timezone: Europe/Berlin
+  patchRefs:
+    - key: base.yaml
+      name: talos-common-patches
+    - key: rancher-support.yaml
+      name: talos-common-patches
+  patches:
+    - |
+      # machine config reference here:
+      # https://www.talos.dev/v1.11/reference/configuration/v1alpha1/config/
+      version: v1alpha1 # Indicates the schema used to decode the contents.
+      machine:
+        kubelet:
+          extraConfig:
+            # https://kubernetes.io/docs/concepts/architecture/garbage-collection/
+            imageMaximumGCAge: "48h"
+        install:
+          image: factory.talos.dev/vmware-installer/7bc843886ddac143fae1c3eddfe74664782e0aa50fdce9531070b20be5fc82ae:v1.11.5
+          disk: /dev/sda
+        network:
+          interfaces:
+            - interface: eth0
+              routes:
+                - network: 0.0.0.0/0
+                  gateway: 10.256.3.1
+      cluster:
+        allowSchedulingOnControlPlanes: true
+        externalCloudProvider:
+          enabled: false
+  secretsRef: athena-secrets
+status:
+  conditions:
+    - lastTransitionTime: "2025-12-18T15:06:33Z"
+      message: All cluster nodes have configuration in sync
+      reason: AllNodesInSync
+      status: "True"
+      type: ClusterNodesInSync
+    - lastTransitionTime: "2025-12-18T10:50:54Z"
+      message: All cluster nodes are up to date
+      reason: AllNodesK8sUpToDate
+      status: "True"
+      type: ClusterNodesKubernetesUpToDate
+  nextMaintenanceWindow: "2026-01-05T12:10:00Z"
+  operationStatus:
+    lastTransitionTime: "2025-12-18T15:06:48Z"
+    message: Rolling apply operation is complete
+    phase: Done
+    reason: RollingApplyComplete
+    subOperations:
+      - lastTransitionTime: "2025-12-18T15:06:13Z"
+        message: Node apply operation complete
+        nodeName: athena-c1
+        phase: Done
+        reason: ApplyComplete
+        type: Apply
+      - lastTransitionTime: "2025-12-18T15:06:18Z"
+        message: Node configuration is already in sync, so no apply was needed
+        nodeName: athena-c2
+        phase: Done
+        reason: SkippedConfigInSync
+        type: Apply
+      - lastTransitionTime: "2025-12-18T15:06:33Z"
+        message: Node apply operation complete
+        nodeName: athena-c3
+        phase: Done
+        reason: ApplyComplete
+        type: Apply
+      - lastTransitionTime: "2025-12-18T15:06:38Z"
+        message: Node configuration is already in sync, so no apply was needed
+        nodeName: athena-w1
+        phase: Done
+        reason: SkippedConfigInSync
+        type: Apply
+      - lastTransitionTime: "2025-12-18T15:06:43Z"
+        message: Node configuration is already in sync, so no apply was needed
+        nodeName: athena-w2
+        phase: Done
+        reason: SkippedConfigInSync
+        type: Apply
+      - lastTransitionTime: "2025-12-18T15:06:48Z"
+        message: Node configuration is already in sync, so no apply was needed
+        nodeName: athena-w3
+        phase: Done
+        reason: SkippedConfigInSync
+        type: Apply
+    type: RollingApply

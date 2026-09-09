@@ -1,0 +1,41 @@
+{{- if .Values.prometheus.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "talos-operator.fullname" . }}-metrics-monitor
+  labels:
+    {{- include "talos-operator.labels" . | nindent 4 }}
+  {{- with .Values.prometheus.serviceMonitor.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "talos-operator.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+  endpoints:
+    - path: /metrics
+      port: https
+      scheme: https
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      {{- if .Values.certManager.enabled }}
+      tlsConfig:
+        serverName: {{ include "talos-operator.metricsServiceName" . }}.{{ .Release.Namespace }}.svc
+        insecureSkipVerify: false
+        ca:
+          secret:
+            name: {{ .Values.certManager.certificate.secretName }}
+            key: ca.crt
+        cert:
+          secret:
+            name: {{ .Values.certManager.certificate.secretName }}
+            key: tls.crt
+        keySecret:
+          name: {{ .Values.certManager.certificate.secretName }}
+          key: tls.key
+      {{- else }}
+      tlsConfig:
+        insecureSkipVerify: {{ .Values.prometheus.serviceMonitor.tls.insecureSkipVerify }}
+      {{- end }}
+{{- end }}

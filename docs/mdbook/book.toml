@@ -1,0 +1,8 @@
+[book]
+authors = ["Cassandra Beelen"]
+language = "en"
+src = "src"
+title = "Talos Operator Docs"
+
+[output.html.code.hidelines]
+yaml = "# "

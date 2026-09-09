@@ -1,0 +1,29 @@
+# This rule is not used by the project talos-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to talos.rtl.de resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: talos-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: node-viewer-role
+rules:
+- apiGroups:
+  - talos.rtl.de
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - talos.rtl.de
+  resources:
+  - nodes/status
+  verbs:
+  - get

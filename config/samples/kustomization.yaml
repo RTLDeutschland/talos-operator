@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- talos.rtl.de_v1alpha1_cluster.yaml
+- talos.rtl.de_v1alpha1_node.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

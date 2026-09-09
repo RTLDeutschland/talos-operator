@@ -1,0 +1,138 @@
+{{- if and .Values.rbac.create .Values.rbac.helperRoles }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "talos-operator.fullname" . }}-cluster-admin-role
+  labels:
+    {{- include "talos-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - clusters
+    verbs:
+      - '*'
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - clusters/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "talos-operator.fullname" . }}-cluster-editor-role
+  labels:
+    {{- include "talos-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - clusters
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - clusters/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "talos-operator.fullname" . }}-cluster-viewer-role
+  labels:
+    {{- include "talos-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - clusters
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - clusters/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "talos-operator.fullname" . }}-node-admin-role
+  labels:
+    {{- include "talos-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - nodes
+    verbs:
+      - '*'
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - nodes/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "talos-operator.fullname" . }}-node-editor-role
+  labels:
+    {{- include "talos-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - nodes
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - nodes/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "talos-operator.fullname" . }}-node-viewer-role
+  labels:
+    {{- include "talos-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - talos.rtl.de
+    resources:
+      - nodes/status
+    verbs:
+      - get
+{{- end }}

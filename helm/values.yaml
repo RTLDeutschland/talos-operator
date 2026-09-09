@@ -1,0 +1,88 @@
+# Default values for talos-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/rtldeutschland/talos-operator
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+leaderElection:
+  enabled: true
+
+features:
+  enableNodeLabel: true
+  enableCrossNamespacePatchRefs: true
+  enableHTTP2: false
+  enablePProf: false
+
+healthProbe:
+  bindAddress: :8081
+
+metrics:
+  port: 8443
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+rbac:
+  create: true
+  metricsAuth: true
+  metricsReader: true
+  helperRoles: true
+
+networkPolicy:
+  enabled: false
+
+certManager:
+  enabled: false
+  issuer:
+    name: selfsigned-issuer
+    kind: Issuer
+  certificate:
+    name: metrics-certs
+    secretName: metrics-server-cert
+
+prometheus:
+  enabled: false
+  serviceMonitor:
+    annotations: {}
+    tls:
+      insecureSkipVerify: true

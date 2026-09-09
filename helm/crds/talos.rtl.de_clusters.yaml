@@ -1,0 +1,517 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: clusters.talos.rtl.de
+spec:
+  group: talos.rtl.de
+  names:
+    kind: Cluster
+    listKind: ClusterList
+    plural: clusters
+    singular: cluster
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.domain
+      name: Domain
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - jsonPath: .spec.kubernetesVersion
+      name: Kubernetes
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="ClusterNodesInSync")].status
+      name: ConfigInSync
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="ClusterNodesKubernetesUpToDate")].status
+      name: K8sInSync
+      type: string
+    - jsonPath: .status.operationStatus.type
+      name: Operation
+      type: string
+    - jsonPath: .status.operationStatus.phase
+      name: Operation Phase
+      type: string
+    - description: Last transition time of the current operation
+      jsonPath: .status.operationStatus.lastTransitionTime
+      name: Operation Age
+      type: date
+    - jsonPath: .status.nextMaintenanceWindow
+      name: Next Maintenance Window
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Cluster is the Schema for the clusters API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          operation:
+            description: operation defines a requested operation on the Cluster
+            properties:
+              type:
+                description: Type of operation to perform across the Cluster.
+                enum:
+                - RollingReboot
+                - RollingApply
+                - KubernetesUpgrade
+                - Bootstrap
+                type: string
+            required:
+            - type
+            type: object
+          spec:
+            description: spec defines the desired state of Cluster
+            properties:
+              controlPlanePatchRefs:
+                description: ControlPlanePatchRefs is a list of references to ConfigMap
+                  resources containing patches to be applied to the Talos config for
+                  control plane nodes in the cluster.
+                items:
+                  description: PatchRef defines a reference to a ConfigMap containing
+                    a patch.
+                  properties:
+                    key:
+                      description: Key of the patch data in the ConfigMap. Defaults
+                        to "patch.yaml" if not specified.
+                      type: string
+                    name:
+                      description: Name of the ConfigMap containing the patch.
+                      type: string
+                    namespace:
+                      description: |-
+                        Namespace of the ConfigMap containing the patch.
+                        Defaults to the same namespace as the Node or Cluster resource if not specified.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+              controlPlanePatches:
+                description: ControlPlanePatches is a list of inline YAML / JSON patches
+                  to be applied to the Talos config for control plane nodes in the
+                  cluster.
+                items:
+                  type: string
+                type: array
+              domain:
+                description: |-
+                  Domain is the domain name suffix used for all nodes in the cluster.
+                  The default control plane URL is also (meta.name + "." + spec.domain).
+                type: string
+              kubernetesVersion:
+                description: |-
+                  KubernetesVersion is the desired Kubernetes version for the cluster.
+                  If left empty, a default will be set by the operator.
+                pattern: ^(v\d+\.\d+\.\d+)?$
+                type: string
+              options:
+                description: Options contains settings to adjust the behavior of the
+                  Talos operator for this Cluster.
+                properties:
+                  argoCDSecret:
+                    description: ArgoCDSecret defines options relating to the ArgoCD
+                      cluster secret generation feature.
+                    properties:
+                      clusterNameOverride:
+                        description: ClusterNameOverride allows specifying a custom
+                          cluster name to be used in ArgoCD.
+                        type: string
+                      enabled:
+                        default: true
+                        description: Enabled indicates whether the ArgoCD Secret should
+                          be created for the cluster.
+                        type: boolean
+                      extraLabels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          ExtraLabels are extra labels that should be added to the Argo CD secret, for use with
+                          ApplicationSets and similar Argo constructs.
+                        type: object
+                      namespace:
+                        description: |-
+                          Namespace is the namespace in which the ArgoCD Secret should be created.
+                          This should be the same namespace where ArgoCD is installed.
+                        type: string
+                    required:
+                    - namespace
+                    type: object
+                  autoBootstrap:
+                    default: true
+                    description: |-
+                      AutoBootstrap enables automatic cluster bootstrap when the cluster is ready.
+                      When true (default), the operator will automatically bootstrap the cluster once
+                      enough controlplane nodes are provisioned and ready to form a quorum.
+                      When false, bootstrap must be manually triggered.
+                    type: boolean
+                  drainTimeout:
+                    default: 20m
+                    description: DrainTimeout defines a timeout for drain operations
+                      performed by the operator.
+                    type: string
+                  maintenanceWindow:
+                    description: Maintenance defines options relating to the maintenance
+                      window feature.
+                    properties:
+                      annotationsEnabled:
+                        default: true
+                        description: AnnotationsEnabled indicates whether or not the
+                          next maintenance window should be annotated on the nodes
+                          in the cluster.
+                        type: boolean
+                      cron:
+                        description: Cron is a cron expression defining the maintenance
+                          window schedule.
+                        type: string
+                      duration:
+                        default: 1h
+                        description: Duration is the duration of the maintenance window.
+                        type: string
+                      enabled:
+                        default: true
+                        description: Enabled indicates whether automatic maintenance
+                          operations are enabled for the cluster.
+                        type: boolean
+                      timezone:
+                        default: UTC
+                        description: |-
+                          Timezone is the timezone to use when evaluating the cron schedule.
+                          Defaults to UTC if not specified. Must be a valid IANA Time Zone database name
+                          (e.g., "America/New_York", "Europe/Berlin", "Asia/Tokyo").
+                        type: string
+                    required:
+                    - cron
+                    type: object
+                  phaseTimeout:
+                    default: 10m
+                    description: |-
+                      PhaseTimeout defines the maximum length that an operation phase may take before being
+                      considered failed. This applies to all phases except Draining, the most notable of
+                      which is the Verifying phase.
+                    type: string
+                type: object
+              patchRefs:
+                description: PatchRefs is a list of references to ConfigMap resources
+                  containing patches to be applied to the Talos config for all nodes
+                  in the cluster.
+                items:
+                  description: PatchRef defines a reference to a ConfigMap containing
+                    a patch.
+                  properties:
+                    key:
+                      description: Key of the patch data in the ConfigMap. Defaults
+                        to "patch.yaml" if not specified.
+                      type: string
+                    name:
+                      description: Name of the ConfigMap containing the patch.
+                      type: string
+                    namespace:
+                      description: |-
+                        Namespace of the ConfigMap containing the patch.
+                        Defaults to the same namespace as the Node or Cluster resource if not specified.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+              patches:
+                description: Patches is a list of inline YAML / JSON patches to be
+                  applied to the Talos config for all nodes in the cluster.
+                items:
+                  type: string
+                type: array
+              secretsRef:
+                description: |-
+                  SecretsRef is the name of the Secret containing the secrets.yaml of the cluster.
+                  If left empty or the named secret doesn't exist, the secret will be generated by the operator.
+                type: string
+              workerPatchRefs:
+                description: WorkerPatchRefs is a list of references to ConfigMap
+                  resources containing patches to be applied to the Talos config for
+                  worker nodes in the cluster.
+                items:
+                  description: PatchRef defines a reference to a ConfigMap containing
+                    a patch.
+                  properties:
+                    key:
+                      description: Key of the patch data in the ConfigMap. Defaults
+                        to "patch.yaml" if not specified.
+                      type: string
+                    name:
+                      description: Name of the ConfigMap containing the patch.
+                      type: string
+                    namespace:
+                      description: |-
+                        Namespace of the ConfigMap containing the patch.
+                        Defaults to the same namespace as the Node or Cluster resource if not specified.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+              workerPatches:
+                description: WorkerPatches is a list of inline YAML / JSON patches
+                  to be applied to the Talos config for worker nodes in the cluster.
+                items:
+                  type: string
+                type: array
+            required:
+            - domain
+            type: object
+          status:
+            description: status defines the observed state of Cluster
+            properties:
+              conditions:
+                description: |-
+                  conditions represent the current state of the Cluster resource.
+                  Each condition has a unique type and reflects the status of a specific aspect of the resource.
+
+                  Standard condition types include:
+                  - "Available": the resource is fully functional
+                  - "Progressing": the resource is being created or updated
+                  - "Degraded": the resource failed to reach or maintain its desired state
+
+                  The status of each condition is one of True, False, or Unknown.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              nextMaintenanceWindow:
+                description: NextMaintenanceWindow indicates the start time of the
+                  next maintenance window.
+                format: date-time
+                type: string
+              operationStatus:
+                description: Operation provides details about the current operation
+                  being performed on the Cluster.
+                properties:
+                  lastTransitionTime:
+                    description: LastTransitionTime is the last time the operation
+                      changed phases.
+                    format: date-time
+                    type: string
+                  message:
+                    description: Message provides a human-readable message about the
+                      operation.
+                    type: string
+                  phase:
+                    description: Phase indicates the current phase of the operation.
+                    type: string
+                  reason:
+                    description: Reason provides a code or short description of why
+                      the operation is in its current phase.
+                    type: string
+                  subOperations:
+                    description: SubOperations contains the status of individual Node
+                      operations that are part of this Cluster operation.
+                    items:
+                      description: ClusterManagedNodeOperationStatus defines the status
+                        of a Cluster-managed Node operation.
+                      properties:
+                        kubernetesComponentUpgrade:
+                          description: KubernetesComponentUpgrade contains arguments
+                            for the KubernetesComponentUpgrade operation.
+                          properties:
+                            componentName:
+                              description: ComponentName is the name of the Kubernetes
+                                component to upgrade
+                              enum:
+                              - apiserver
+                              - controllerManager
+                              - scheduler
+                              - kubelet
+                              type: string
+                          required:
+                          - componentName
+                          type: object
+                        lastTransitionTime:
+                          description: LastTransitionTime is the last time the operation
+                            changed phases.
+                          format: date-time
+                          type: string
+                        message:
+                          description: Message provides a human-readable message about
+                            the operation.
+                          type: string
+                        nodeName:
+                          description: NodeName is the name of the Node on which the
+                            operation is being performed.
+                          type: string
+                        options:
+                          description: Options contains additional options for the
+                            operation.
+                          properties:
+                            unsafe:
+                              description: |-
+                                Unsafe indicates whether to perform the operation in unsafe mode, bypassing certain safety checks.
+                                Commonly this means bypassing Kubernetes drain and uncordon operations.
+                              type: boolean
+                          type: object
+                        phase:
+                          description: Phase indicates the current phase of the operation.
+                          type: string
+                        provision:
+                          description: Provision contains arguments for the Provision
+                            operation.
+                          properties:
+                            address:
+                              description: Address is the IP / DNS address to find
+                                the Talos node in maintenance mode.
+                              type: string
+                            skip:
+                              description: Skip indicates whether to skip the provisioning
+                                operation.
+                              type: boolean
+                          type: object
+                        reason:
+                          description: Reason provides a code or short description
+                            of why the operation is in its current phase.
+                          type: string
+                        reset:
+                          description: Reset contains arguments for the Reset operation.
+                          properties:
+                            graceful:
+                              default: true
+                              description: Graceful indicates whether to perform a
+                                graceful reset, allowing services to shut down properly
+                                and etcd members to leave cleanly.
+                              type: boolean
+                            mode:
+                              description: |-
+                                Mode defines the mode of erasure for the reset operation.
+                                (default "all" if no system labels or user disks are specified)
+                              enum:
+                              - all
+                              - system-disk
+                              - user-disks
+                              type: string
+                            reboot:
+                              default: false
+                              description: Reboot indicates whether to reboot the
+                                Node after the reset operation.
+                              type: boolean
+                            systemLabelsToWipe:
+                              description: |-
+                                SystemLabelsToWipe is a list of specific system labels to wipe during the reset operation.
+                                If empty, all system labels will be wiped, assuming the mode includes system-disk.
+                              items:
+                                type: string
+                              type: array
+                            userLabelsToWipe:
+                              description: |-
+                                UserDisksToWipe is a list of specific user disks to wipe during the reset operation.
+                                If empty, all user disks will be wiped, assuming the mode includes user-disks.
+                              items:
+                                type: string
+                              type: array
+                          type: object
+                        type:
+                          description: Type of operation to perform on the Node.
+                          enum:
+                          - Provision
+                          - Bootstrap
+                          - Apply
+                          - Upgrade
+                          - Reboot
+                          - Shutdown
+                          - Reset
+                          - KubernetesComponentUpgrade
+                          type: string
+                      required:
+                      - nodeName
+                      - type
+                      type: object
+                    type: array
+                  type:
+                    description: Type of operation to perform across the Cluster.
+                    enum:
+                    - RollingReboot
+                    - RollingApply
+                    - KubernetesUpgrade
+                    - Bootstrap
+                    type: string
+                required:
+                - type
+                type: object
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

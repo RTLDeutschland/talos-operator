@@ -29,7 +29,7 @@ Automated cluster node reconciliation inside a maintenance window defined by a c
 
 ### kubectl-talos
 
-`kubectl talos` kubectl plugin to interact with operator-managed clusters almost as transparently as you would an unmanaged cluster, e.g:
+A `kubectl-talos` kubectl plugin to interact with operator-managed clusters almost as transparently as you would an unmanaged cluster, e.g:
 
 - talosctl: `kubectl talos talosctl athena -- -n athena-c1.internal get machinestatus`
 - kubectl: `kubectl talos kubectl athena -- kubectl get nodes -o wide`
@@ -71,7 +71,7 @@ Alternatively, the kubebuilder-scaffolded Kustomize manifests can be found under
 
 ### Development Environment
 
-This project uses [devbox](https://www.jetify.com/devbox/) for reproducible development environments and [direnv](https://direnv.net/) for automatic environment loading.
+This project uses [nix-direnv](https://github.com/nix-community/nix-direnv) for reproducible development environments and [direnv](https://direnv.net/) for automatic environment loading.
 
 To set up:
 ```sh

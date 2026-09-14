@@ -17,6 +17,7 @@ import (
 	"github.com/siderolabs/talos/pkg/machinery/config/generate"
 	talossecrets "github.com/siderolabs/talos/pkg/machinery/config/generate/secrets"
 	"github.com/siderolabs/talos/pkg/machinery/config/machine"
+	"github.com/siderolabs/talos/pkg/machinery/config/types/k8s"
 	"github.com/siderolabs/talos/pkg/machinery/config/types/network"
 	"github.com/siderolabs/talos/pkg/machinery/config/types/v1alpha1"
 	"go.yaml.in/yaml/v4"
@@ -249,44 +250,114 @@ func GenerateMachineConfig(
 		)
 	}
 
-	// kubernetes version patch (technically a "user" patch, it has higher priority than the defaults because it's our own state machine)
+	// kubernetes version patch
 	patchHierarchy = append(patchHierarchy, talosv1alpha1.PatchHierarchyElement{
 		Source:               "node.status.kubernetesVersions",
 		Synthetic:            true,
 		SyntheticExplanation: "a patch defining all kubernetes components and their versions, defaulting from cluster.spec.kubernetesVersion",
 	})
+
 	k8sVersions := node.Status.KubernetesVersions
 	if k8sVersions == nil {
 		k8sVersions = makeDefaultKubernetesVersions(node, cluster)
 	}
-	machinePatchData := KV{
-		"kubelet": KV{
-			"image": "ghcr.io/siderolabs/kubelet:" + k8sVersions.Kubelet,
-		},
-	}
-	operatorPatchData := KV{
-		"version": "v1alpha1",
-		"machine": machinePatchData,
-	}
-	if node.Spec.Role == Controlplane {
-		operatorPatchData["cluster"] = KV{
-			"apiServer": KV{
-				"image": "registry.k8s.io/kube-apiserver:" + k8sVersions.APIServer,
-			},
-			"controllerManager": KV{
-				"image": "registry.k8s.io/kube-controller-manager:" + k8sVersions.ControllerManager,
-			},
-			"scheduler": KV{
-				"image": "registry.k8s.io/kube-scheduler:" + k8sVersions.Scheduler,
-			},
-			"proxy": KV{
-				"image": "registry.k8s.io/kube-proxy:" + k8sVersions.Kubelet,
+
+	if versionContract.MultidocKubernetesConfigSupported() {
+		// v1.14+
+		patchData := ""
+
+		k8sKubeletConfig := k8s.NewKubeletConfigV1Alpha1()
+		k8sKubeletConfig.KubeletImage = "ghcr.io/siderolabs/kubelet:" + k8sVersions.Kubelet
+		k8sKubeletConfigBytes, err := yaml.Marshal(k8sKubeletConfig)
+		if err != nil {
+			return nil, patchHierarchy, fmt.Errorf("failed to marshal kubelet config: %w", err)
+		}
+		patchData += string(k8sKubeletConfigBytes) + "\n---\n"
+
+		k8sKubeProxyConfig := k8s.NewKubeProxyConfigV1Alpha1()
+		k8sKubeProxyConfig.ProxyImage = "registry.k8s.io/kube-proxy:" + k8sVersions.Kubelet
+		k8sKubeProxyConfigBytes, err := yaml.Marshal(k8sKubeProxyConfig)
+		if err != nil {
+			return nil, patchHierarchy, fmt.Errorf("failed to marshal kube-proxy config: %w", err)
+		}
+		patchData += string(k8sKubeProxyConfigBytes) + "\n---\n"
+
+		if node.Spec.Role == Controlplane {
+			k8sAPIServerConfig := k8s.NewKubeAPIServerConfigV1Alpha1()
+			k8sAPIServerConfig.PodImage = "registry.k8s.io/kube-apiserver:" + k8sVersions.APIServer
+			k8sAPIServerConfigBytes, err := yaml.Marshal(k8sAPIServerConfig)
+			if err != nil {
+				return nil, patchHierarchy, fmt.Errorf(
+					"failed to marshal api server config: %w",
+					err,
+				)
+			}
+			patchData += string(k8sAPIServerConfigBytes) + "\n---\n"
+
+			k8sControllerManagerConfig := k8s.NewKubeControllerManagerConfigV1Alpha1()
+			k8sControllerManagerConfig.PodImage = "registry.k8s.io/kube-controller-manager:" + k8sVersions.ControllerManager
+			k8sControllerManagerConfigBytes, err := yaml.Marshal(k8sControllerManagerConfig)
+			if err != nil {
+				return nil, patchHierarchy, fmt.Errorf(
+					"failed to marshal controller manager config: %w",
+					err,
+				)
+			}
+			patchData += string(k8sControllerManagerConfigBytes) + "\n---\n"
+
+			k8sSchedulerConfig := k8s.NewKubeSchedulerConfigV1Alpha1()
+			k8sSchedulerConfig.PodImage = "registry.k8s.io/kube-scheduler:" + k8sVersions.Scheduler
+			k8sSchedulerConfigBytes, err := yaml.Marshal(k8sSchedulerConfig)
+			if err != nil {
+				return nil, patchHierarchy, fmt.Errorf(
+					"failed to marshal scheduler config: %w",
+					err,
+				)
+			}
+			patchData += string(k8sSchedulerConfigBytes) + "\n---\n"
+		}
+
+		configProvider, err = addPatchToProvider(configProvider, patchData)
+		if err != nil {
+			return nil, patchHierarchy, fmt.Errorf(
+				"failed to add kubernetes versions patch: %w",
+				err,
+			)
+		}
+	} else {
+		// sub-1.14 kubernetes version patch
+		machinePatchData := KV{
+			"kubelet": KV{
+				"image": "ghcr.io/siderolabs/kubelet:" + k8sVersions.Kubelet,
 			},
 		}
-	}
-	configProvider, err = addPatchToProvider(configProvider, mustYaml(operatorPatchData))
-	if err != nil {
-		return nil, patchHierarchy, fmt.Errorf("failed to add kubernetes versions patch: %w", err)
+		operatorPatchData := KV{
+			"version": "v1alpha1",
+			"machine": machinePatchData,
+		}
+		if node.Spec.Role == Controlplane {
+			operatorPatchData["cluster"] = KV{
+				"apiServer": KV{
+					"image": "registry.k8s.io/kube-apiserver:" + k8sVersions.APIServer,
+				},
+				"controllerManager": KV{
+					"image": "registry.k8s.io/kube-controller-manager:" + k8sVersions.ControllerManager,
+				},
+				"scheduler": KV{
+					"image": "registry.k8s.io/kube-scheduler:" + k8sVersions.Scheduler,
+				},
+				"proxy": KV{
+					"image": "registry.k8s.io/kube-proxy:" + k8sVersions.Kubelet,
+				},
+			}
+		}
+		configProvider, err = addPatchToProvider(configProvider, mustYaml(operatorPatchData))
+		if err != nil {
+			return nil, patchHierarchy, fmt.Errorf(
+				"failed to add kubernetes versions patch: %w",
+				err,
+			)
+		}
 	}
 
 	// add node label patch
@@ -484,7 +555,7 @@ func GenerateMachineConfig(
 		Synthetic:            true,
 		SyntheticExplanation: "a patch defining the machine type",
 	})
-	machinePatchData = KV{
+	machinePatchData := KV{
 		"version": "v1alpha1",
 		"machine": KV{
 			"type": node.Spec.Role,

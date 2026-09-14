@@ -27,6 +27,15 @@ func mustYaml(in map[string]any) string {
 	return string(data)
 }
 
+// mustYamlDoc marshals a map into a YAML document string, panicking if the marshaling fails.
+func mustYamlDoc(in map[string]any) string {
+	data, err := yaml.Marshal(in)
+	if err != nil {
+		panic(err)
+	}
+	return "---\n" + string(data)
+}
+
 // makeDefaultKubernetesVersions returns a KubernetesVersions struct populated with the Kubernetes version from the Cluster spec.
 func makeDefaultKubernetesVersions(
 	node *talosv1alpha1.Node,

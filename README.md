@@ -2,6 +2,8 @@
 
 A talosctl-inspired Kubernetes operator for managing Talos clusters.
 
+Supporting versions up to, and including: **Talos v1.13**, **Kubernetes 1.37**
+
 ## Motivation
 
 talosctl is great, but there is large potential for human error. Some of this could be mitigated by using wrapper scripts and CI, but this often results in poor visibility and inflexibility.

@@ -48,6 +48,12 @@ type ClusterSpec struct {
 	// +kubebuilder:validation:Pattern=`^(v\d+\.\d+\.\d+)?$`
 	KubernetesVersion string `json:"kubernetesVersion"`
 
+	// TalosVersionContract is the Talos version contract to target when generating configuration.
+	// If left empty, will default to the current Talos version contract.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(v\d+\.\d+)?$`
+	TalosVersionContract string `json:"talosVersionContract"`
+
 	// Domain is the domain name suffix used for all nodes in the cluster.
 	// The default control plane URL is also (meta.name + "." + spec.domain).
 	// +required

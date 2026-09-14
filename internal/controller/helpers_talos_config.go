@@ -25,6 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var DefaultTalosVersionContract = config.TalosVersion1_13
+
 // driftedClock is a clock that intentionally skews behind by 5 seconds,
 // so that the generated mTLS client cert start date is intentionally 5 seconds behind
 // wall clock time.
@@ -205,6 +207,20 @@ func GenerateMachineConfig(
 	)
 	if err != nil {
 		return nil, patchHierarchy, err
+	}
+
+	// try to parse version contract from cluster spec, otherwise default to latest
+	versionContractStr := cluster.Spec.TalosVersionContract
+	var versionContract *config.VersionContract = DefaultTalosVersionContract // current is a nil pointer, oops
+	if versionContractStr != "" {
+		versionContract, err = config.ParseContractFromVersion(versionContractStr)
+		if err != nil {
+			return nil, patchHierarchy, fmt.Errorf(
+				"failed to parse version contract from TalosVersionContract %q: %w",
+				cluster.Spec.TalosVersionContract,
+				err,
+			)
+		}
 	}
 
 	// we start by assembling all of the user patches into a single config provider
@@ -474,65 +490,71 @@ func GenerateMachineConfig(
 		return nil, nil, fmt.Errorf("failed to add machine role patch: %w", err)
 	}
 
-	// VERSION CONTRACT HEURISTICS
-	// determine which Talos version all of this is targeting so that we can generate the base config
-	imageStr := configProvider.Machine().Install().Image()
-	if imageStr == "" {
-		// the linter wants to complain about the error message, but I feel it is more important
-		// to convey readable information to the end user in this case.
-		// nolint:staticcheck
-		return nil, patchHierarchy, fmt.Errorf(
-			"The final config does not have a `machine.install.image`. The operator intentionally provides no default for this value.",
-		)
-	}
+	if versionContractStr == "" {
+		// VERSION CONTRACT HEURISTICS
+		// determine which Talos version all of this is targeting so that we can generate the base config
+		imageStr := configProvider.Machine().Install().Image()
+		if imageStr == "" {
+			// the linter wants to complain about the error message, but I feel it is more important
+			// to convey readable information to the end user in this case.
+			// nolint:staticcheck
+			return nil, patchHierarchy, fmt.Errorf(
+				"The final config does not have a `machine.install.image`. The operator intentionally provides no default for this value.",
+			)
+		}
 
-	_, installImageTag, ok := strings.Cut(imageStr, ":")
-	if !ok {
-		return nil, patchHierarchy, fmt.Errorf(
-			"failed to determine Talos version from install image %q",
-			imageStr,
-		)
-	}
+		_, installImageTag, ok := strings.Cut(imageStr, ":")
+		if !ok {
+			return nil, patchHierarchy, fmt.Errorf(
+				"failed to determine Talos version from install image %q",
+				imageStr,
+			)
+		}
 
-	currentlyInstalled := node.Status.TalosVersion
+		currentlyInstalled := node.Status.TalosVersion
 
-	// figure out which of the versions is the actual target
-	var targetVersion string = installImageTag
-	if currentlyInstalled != "" && currentlyInstalled != installImageTag {
-		// version does not match, so we are in an upgrade / downgrade scenario.
-		// we want to use the lower of the two versions as a target since that will be the most compatible.
-		// i.e. if we are upgrading from 1.11 to 1.12, we want to generate a 1.11 config because
-		// otherwise the apply that kicks off the staged upgrade will fail.
-		parsedInstallImageTag, err := semver.ParseTolerant(installImageTag)
+		// figure out which of the versions is the actual target
+		var targetVersion string = installImageTag
+		if currentlyInstalled != "" && currentlyInstalled != installImageTag {
+			// version does not match, so we are in an upgrade / downgrade scenario.
+			// we want to use the lower of the two versions as a target since that will be the most compatible.
+			// i.e. if we are upgrading from 1.11 to 1.12, we want to generate a 1.11 config because
+			// otherwise the apply that kicks off the staged upgrade will fail.
+			parsedInstallImageTag, err := semver.ParseTolerant(installImageTag)
+			if err != nil {
+				return nil, patchHierarchy, fmt.Errorf(
+					"failed to parse install image tag %q as semver: %w",
+					installImageTag,
+					err,
+				)
+			}
+			parsedCurrentlyInstalled, err := semver.ParseTolerant(currentlyInstalled)
+			if err != nil {
+				return nil, patchHierarchy, fmt.Errorf(
+					"failed to parse currently installed version %q as semver: %w",
+					currentlyInstalled,
+					err,
+				)
+			}
+
+			// yank the version contract down to the currently installed version
+			if parsedCurrentlyInstalled.LT(parsedInstallImageTag) {
+				targetVersion = currentlyInstalled
+			}
+		}
+
+		versionContract, err = config.ParseContractFromVersion(targetVersion)
 		if err != nil {
 			return nil, patchHierarchy, fmt.Errorf(
-				"failed to parse install image tag %q as semver: %w",
+				"failed to parse version contract from install image tag %q: %w",
 				installImageTag,
 				err,
 			)
 		}
-		parsedCurrentlyInstalled, err := semver.ParseTolerant(currentlyInstalled)
-		if err != nil {
-			return nil, patchHierarchy, fmt.Errorf(
-				"failed to parse currently installed version %q as semver: %w",
-				currentlyInstalled,
-				err,
-			)
+		// limit heuristics to <1.14
+		if versionContract.Major == 1 && versionContract.Minor >= 14 {
+			versionContract = config.TalosVersion1_13
 		}
-
-		// yank the version contract down to the currently installed version
-		if parsedCurrentlyInstalled.LT(parsedInstallImageTag) {
-			targetVersion = currentlyInstalled
-		}
-	}
-
-	versionContract, err := config.ParseContractFromVersion(targetVersion)
-	if err != nil {
-		return nil, patchHierarchy, fmt.Errorf(
-			"failed to parse version contract from install image tag %q: %w",
-			installImageTag,
-			err,
-		)
 	}
 
 	// initialize the generator
@@ -596,14 +618,18 @@ func GenerateMachineConfig(
 
 	// since this step applies all patches underneath the generated config, we prepend a synthetic patch for the generated config
 	patchHierarchyNew := make(talosv1alpha1.PatchHierarchy, 0, cap(patchHierarchy))
+	versionContractSource := "cluster.spec.talosVersionContract"
+	if versionContractStr == "" {
+		versionContractSource = "operator defaults"
+	}
 	patchHierarchyNew = append(patchHierarchyNew, talosv1alpha1.PatchHierarchyElement{
 		Source:    "operator:github.com/siderolabs/talos/pkg/machinery/config/generate",
 		Synthetic: true,
 		SyntheticExplanation: fmt.Sprintf(
-			"the base config generated by the Talos API equivalent to `talosctl gen config`, "+
-				"respecting the version contract specified in `machine.install.image` "+
-				"in subsequent patches (detected: %q)",
+			"the base config generated by the Talos API equivalent to "+
+				"`talosctl gen config --talos-version=%q` (version from %s)",
 			versionContract.String(),
+			versionContractSource,
 		),
 	})
 	patchHierarchyNew = append(patchHierarchyNew, patchHierarchy...)

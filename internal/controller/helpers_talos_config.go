@@ -7,11 +7,9 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	talosv1alpha1 "github.com/RTLDeutschland/talos-operator/api/v1alpha1"
-	"github.com/blang/semver/v4"
 	"github.com/samber/lo"
 	"github.com/siderolabs/talos/pkg/machinery/config"
 	"github.com/siderolabs/talos/pkg/machinery/config/configpatcher"
@@ -495,73 +493,6 @@ func GenerateMachineConfig(
 	configProvider, err = addPatchToProvider(configProvider, mustYaml(machinePatchData))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to add machine role patch: %w", err)
-	}
-
-	if versionContractStr == "" {
-		// VERSION CONTRACT HEURISTICS
-		// determine which Talos version all of this is targeting so that we can generate the base config
-		imageStr := configProvider.Machine().Install().Image()
-		if imageStr == "" {
-			// the linter wants to complain about the error message, but I feel it is more important
-			// to convey readable information to the end user in this case.
-			// nolint:staticcheck
-			return nil, patchHierarchy, fmt.Errorf(
-				"The final config does not have a `machine.install.image`. The operator intentionally provides no default for this value.",
-			)
-		}
-
-		_, installImageTag, ok := strings.Cut(imageStr, ":")
-		if !ok {
-			return nil, patchHierarchy, fmt.Errorf(
-				"failed to determine Talos version from install image %q",
-				imageStr,
-			)
-		}
-
-		currentlyInstalled := node.Status.TalosVersion
-
-		// figure out which of the versions is the actual target
-		var targetVersion string = installImageTag
-		if currentlyInstalled != "" && currentlyInstalled != installImageTag {
-			// version does not match, so we are in an upgrade / downgrade scenario.
-			// we want to use the lower of the two versions as a target since that will be the most compatible.
-			// i.e. if we are upgrading from 1.11 to 1.12, we want to generate a 1.11 config because
-			// otherwise the apply that kicks off the staged upgrade will fail.
-			parsedInstallImageTag, err := semver.ParseTolerant(installImageTag)
-			if err != nil {
-				return nil, patchHierarchy, fmt.Errorf(
-					"failed to parse install image tag %q as semver: %w",
-					installImageTag,
-					err,
-				)
-			}
-			parsedCurrentlyInstalled, err := semver.ParseTolerant(currentlyInstalled)
-			if err != nil {
-				return nil, patchHierarchy, fmt.Errorf(
-					"failed to parse currently installed version %q as semver: %w",
-					currentlyInstalled,
-					err,
-				)
-			}
-
-			// yank the version contract down to the currently installed version
-			if parsedCurrentlyInstalled.LT(parsedInstallImageTag) {
-				targetVersion = currentlyInstalled
-			}
-		}
-
-		versionContract, err = config.ParseContractFromVersion(targetVersion)
-		if err != nil {
-			return nil, patchHierarchy, fmt.Errorf(
-				"failed to parse version contract from install image tag %q: %w",
-				installImageTag,
-				err,
-			)
-		}
-		// limit heuristics to <1.14
-		if versionContract.Major == 1 && versionContract.Minor >= 14 {
-			versionContract = config.TalosVersion1_13
-		}
 	}
 
 	// initialize the generator

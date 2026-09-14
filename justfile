@@ -259,3 +259,9 @@ golines: _ensure-localbin
 [group('documentation')]
 doc:
     mdbook serve docs/mdbook
+
+bump-version VERSION:
+    echo "{{ VERSION }}" | grep --quiet --invert-match -E '^v' || { echo "usage error: version should not start with 'v'"; exit 1; }
+    echo "{{ VERSION }}" > VERSION
+    yq -i ".appVersion = \"v{{ VERSION }}\"" helm/Chart.yaml
+    yq -i ".version = \"{{ VERSION }}\"" helm/Chart.yaml

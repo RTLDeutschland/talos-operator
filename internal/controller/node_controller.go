@@ -250,6 +250,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, nil
 	}
 	encodedCfgStr := string(encodedCfg)
+	encodedCfgStr = RedactMachineConfig(encodedCfgStr)
 	if node.Status.EffectiveConfig != encodedCfgStr {
 		log.Debug().Msg("Updating effectiveConfig status")
 		err := r.updateNodeStatus(ctx, func(n *talosv1alpha1.Node) {

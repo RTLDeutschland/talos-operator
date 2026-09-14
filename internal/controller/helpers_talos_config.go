@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -679,44 +680,6 @@ func GenerateMachineConfig(
 		return nil, patchHierarchy, fmt.Errorf("failed to add hostname patch: %w", err)
 	}
 
-	if opts != nil && opts.WithoutSecrets {
-		delete := KV{"$patch": "delete"}
-		removeSecretsPatch := mustYaml(KV{
-			"version": "v1alpha1",
-			"machine": KV{
-				"token": delete,
-				"ca":    delete,
-			},
-			"cluster": KV{
-				// ID is technically not a secret but keeping it here is misinformation because it comes from the demo bundle
-				"id":                        delete,
-				"secret":                    delete,
-				"token":                     delete,
-				"ca":                        delete,
-				"aggregatorCA":              delete,
-				"secretboxEncryptionSecret": delete,
-				"serviceAccount":            delete,
-			},
-		})
-		if node.Spec.Role == Controlplane {
-			removeSecretsPatch += "\n---\n"
-			removeSecretsPatch += mustYaml(KV{
-				"version": "v1alpha1",
-				"cluster": KV{
-					"etcd": KV{
-						"ca": delete,
-					},
-				},
-			})
-		}
-
-		// intentionally omitted from patch hierarchy to avoid confusion
-		configProvider, err = addPatchToProvider(configProvider, removeSecretsPatch)
-		if err != nil {
-			return nil, patchHierarchy, fmt.Errorf("failed to add secrets removal patch: %w", err)
-		}
-	}
-
 	return configProvider, patchHierarchy, nil
 }
 
@@ -761,4 +724,22 @@ func EncodeMachineConfig(cfg config.Provider, pretty bool) ([]byte, error) {
 	data := outData.Bytes()
 
 	return data, nil
+}
+
+var pemRe = regexp.MustCompile(`-----BEGIN.*\n(?: *[A-Za-z0-9+/]+={0,2}\n)+ *-----END.*`)
+var tokenRe = regexp.MustCompile(`(token): [a-z0-9]+\.[a-z0-9]+`)
+var passphraseRe = regexp.MustCompile(`(passphrase): [^\n]+`) // disk encryption
+var base64Re = regexp.MustCompile(`: [A-Za-z0-9+/]{43,}={0,2}`)
+
+// RedactMachineConfig tries to remove all the secrets from the given machine config.
+//
+// It is recommended to combine this with `WithoutSecrets: true` so the secrets are demo secrets
+// to begin with.
+func RedactMachineConfig(cfg string) string {
+	out := cfg
+	out = pemRe.ReplaceAllString(out, "<redacted>")
+	out = tokenRe.ReplaceAllString(out, "$1: <redacted>")
+	out = passphraseRe.ReplaceAllString(out, "$1: <redacted>")
+	out = base64Re.ReplaceAllString(out, ": <redacted>")
+	return out
 }

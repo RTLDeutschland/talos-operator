@@ -185,8 +185,6 @@ var demoSecretsBundle *talossecrets.Bundle = lo.Must(
 //
 // We first combine all of the input patches so that we can later use them for heuristics when
 // generating the initial patch that all the combined patches live on top of.
-//
-// Returns: config, patchHierarchy, error
 func GenerateMachineConfig(
 	ctx context.Context,
 	kclient client.Client,

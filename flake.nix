@@ -140,7 +140,7 @@
         };
         task-push-image-cross = pkgs.writeShellApplication {
           name = "task-push-image-cross";
-          runtimeInputs = with pkgs; [regctl skopeo];
+          runtimeInputs = with pkgs; [regctl skopeo nushell];
           text = ''
             # $1: repository URL
             out="$(mktemp -d /tmp/talos-operator-multiarch.XXXXXX)"
@@ -160,6 +160,9 @@
 
             # push the bundle to repo
             skopeo copy --all "oci://''${out}:''${tag}" "docker://''${1}:''${tag}"
+
+            # output the final digest
+            nu -c "print (open $out/index.json | get manifests | last | get digest)"
           '';
         };
 

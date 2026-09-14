@@ -245,12 +245,6 @@ func GenerateMachineConfig(
 			"image": "ghcr.io/siderolabs/kubelet:" + k8sVersions.Kubelet,
 		},
 	}
-	// FIXME: disentangle these two patches
-	if !opts.WithoutRTLLabel {
-		machinePatchData["nodeLabels"] = KV{
-			"rtl.de/cluster-name": node.Spec.ClusterRef,
-		}
-	}
 	operatorPatchData := KV{
 		"version": "v1alpha1",
 		"machine": machinePatchData,
@@ -274,6 +268,28 @@ func GenerateMachineConfig(
 	configProvider, err = addPatchToProvider(configProvider, mustYaml(operatorPatchData))
 	if err != nil {
 		return nil, patchHierarchy, fmt.Errorf("failed to add kubernetes versions patch: %w", err)
+	}
+
+	// add node label patch
+	if !opts.WithoutRTLLabel {
+		patchHierarchy = append(patchHierarchy, talosv1alpha1.PatchHierarchyElement{
+			Source:               "operator:cluster-name-label",
+			Synthetic:            true,
+			SyntheticExplanation: "a patch adding the rtl.de/cluster-name label to the node",
+		})
+
+		nodeLabelPatchData := KV{
+			"version": "v1alpha1",
+			"machine": KV{
+				"nodeLabels": KV{
+					"rtl.de/cluster-name": node.Spec.ClusterRef,
+				},
+			},
+		}
+		configProvider, err = addPatchToProvider(configProvider, mustYaml(nodeLabelPatchData))
+		if err != nil {
+			return nil, patchHierarchy, fmt.Errorf("failed to add node label patch: %w", err)
+		}
 	}
 
 	// add Cluster referenced patches

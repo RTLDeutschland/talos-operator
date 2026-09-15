@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	talosv1alpha1 "github.com/RTLDeutschland/talos-operator/api/v1alpha1"
@@ -582,7 +583,7 @@ func GenerateMachineConfig(
 	input, err := generate.NewInput(
 		cluster.Name,
 		fmt.Sprintf("https://%s:6443", clusterFQDN),
-		cluster.Spec.KubernetesVersion,
+		strings.TrimPrefix(cluster.Spec.KubernetesVersion, "v"),
 		generateOptions...,
 	)
 	if err != nil {

@@ -186,7 +186,19 @@ func (r *NodeReconciler) handleNodeApply(
 			Data:   encodedCfg,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to send apply dry-run request: %w", err)
+			err = r.updateOpStatus(
+				ctx,
+				NodeOperationPhaseFailed,
+				NodeOperationReasonFailedApply,
+				fmt.Sprintf("Failed to send apply dry-run request: %v", err),
+			)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed to update operation phase after apply dry-run failure: %w",
+					err,
+				)
+			}
+			return nil, nil
 		}
 
 		msgs := resp.GetMessages()
@@ -237,7 +249,19 @@ func (r *NodeReconciler) handleNodeApply(
 			Data:   encodedCfg,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to send apply request: %w", err)
+			err = r.updateOpStatus(
+				ctx,
+				NodeOperationPhaseFailed,
+				NodeOperationReasonFailedApply,
+				fmt.Sprintf("Failed to send apply request: %v", err),
+			)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed to update operation phase after apply failure: %w",
+					err,
+				)
+			}
+			return nil, nil
 		}
 
 		// update AppliedConfigHash & update operation status

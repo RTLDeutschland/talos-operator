@@ -157,7 +157,7 @@
           name = "task-push-image";
           text = ''
             # $1: repository URL
-            ${lib.getExe self.packages.${system}.operator-container.copyTo} docker://''${1}:${self.packages.${system}.operator-container.imageTag}
+            ${lib.getExe self.packages.${system}.operator-container.copyTo} "docker://''${1}:${self.packages.${system}.operator-container.imageTag}"
           '';
         };
         task-push-image-cross = pkgs.writeShellApplication {

@@ -130,6 +130,28 @@
           };
         };
 
+        operator-container-multiarch =
+          pkgs.runCommandWith {
+            name = "operator-container-multiarch";
+            derivationArgs.nativeBuildInputs = with pkgs; [regclient];
+          } ''
+            mkdir -p tmp
+            mkdir -p $out
+            tag="${self.packages.${system}.operator-container.imageTag}"
+
+            # build both architectures (needs a cross-platform Nix)
+            ${lib.getExe self.packages.x86_64-linux.operator-container.copyTo} "oci:tmp:amd64"
+            ${lib.getExe self.packages.aarch64-linux.operator-container.copyTo} "oci:tmp:arm64"
+
+            # create a multi-architecture index for the built images
+            regctl index create "ocidir://''${out}:''${tag}" \
+              --ref "ocidir://tmp:amd64" \
+              --ref "ocidir://tmp:arm64" \
+              --annotation "org.opencontainers.image.source=https://github.com/RTLDeutschland/talos-operator" \
+              --annotation "org.opencontainers.image.licenses=MIT" \
+              --annotation "org.opencontainers.image.version=${version}"
+          '';
+
         # CI scripts to build & push images, **without** Docker daemon
         task-push-image = pkgs.writeShellApplication {
           name = "task-push-image";
@@ -143,26 +165,14 @@
           runtimeInputs = with pkgs; [regctl skopeo nushell];
           text = ''
             # $1: repository URL
-            out="$(mktemp -d /tmp/talos-operator-multiarch.XXXXXX)"
+            out="${self.packages.${system}.operator-container-multiarch}"
             tag="${self.packages.${system}.operator-container.imageTag}"
-
-            # build both architectures (needs a cross-platform Nix)
-            ${lib.getExe self.packages.x86_64-linux.operator-container.copyTo} "oci:''${out}:amd64"
-            ${lib.getExe self.packages.aarch64-linux.operator-container.copyTo} "oci:''${out}:arm64"
-
-            # create a multi-architecture index for the built images
-            regctl index create "ocidir://''${out}:''${tag}" \
-              --ref "ocidir://''${out}:amd64" \
-              --ref "ocidir://''${out}:arm64" \
-              --annotation "org.opencontainers.image.source=https://github.com/RTLDeutschland/talos-operator" \
-              --annotation "org.opencontainers.image.licenses=MIT" \
-              --annotation "org.opencontainers.image.version=${version}"
 
             # push the bundle to repo
             skopeo copy --all "oci://''${out}:''${tag}" "docker://''${1}:''${tag}"
 
             # output the final digest
-            nu -c "print (open $out/index.json | get manifests | last | get digest)"
+            nu -c "open $out/index.json | get manifests | last | get digest | print"
           '';
         };
 

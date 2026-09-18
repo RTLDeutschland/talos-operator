@@ -279,7 +279,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 			hasLonghorn {
 			// take no prisoners with longhorn
 			// (besides, we already drained the node)
-			applyMode = machine.ApplyConfigurationRequest_REBOOT
+			applyMode = machine.ApplyConfigurationRequest_REBOOT // FIXME: deprecated API in Talos v1.14
 		}
 
 		req := &machine.ApplyConfigurationRequest{

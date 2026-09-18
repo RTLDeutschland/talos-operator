@@ -2,7 +2,7 @@
 
 A talosctl-inspired Kubernetes operator for managing Talos clusters.
 
-Supporting versions up to, and including: **Talos v1.14**, **Kubernetes 1.37**
+Supporting versions: **Talos v1.12–v1.14**, **Kubernetes 1.34–1.37** (operator cluster)
 
 ## Motivation
 

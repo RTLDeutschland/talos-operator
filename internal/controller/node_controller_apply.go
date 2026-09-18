@@ -209,7 +209,7 @@ func (r *NodeReconciler) handleNodeApply(
 			)
 		}
 		msg := msgs[0]
-		needsReboot := msg.Mode == machine.ApplyConfigurationRequest_REBOOT
+		needsReboot := msg.Mode == machine.ApplyConfigurationRequest_REBOOT // nolint:staticcheck // SA1019 still used as a signal from dry-run
 
 		// if a reboot is required, drain the node first
 		if needsReboot {

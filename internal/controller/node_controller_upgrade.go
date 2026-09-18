@@ -254,6 +254,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 			return nil, nil
 		}
 
+		// FIXME(deprecation): When dropping support for Talos < 1.13
 		if talosVersion.GTE(semver.Version{Major: 1, Minor: 13}) {
 			if err := r.updateOpStatus(
 				ctx,
@@ -441,7 +442,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 		ttCtx, cancel := context.WithTimeout(tCtx, 5*time.Minute)
 		defer cancel()
 
-		_, err := talosClient.UpgradeWithOptions(
+		_, err := talosClient.UpgradeWithOptions( // nolint:staticcheck // SA1019 legacy support path
 			ttCtx,
 			client.WithUpgradeImage(cfg.Machine().Install().Image()),
 		)

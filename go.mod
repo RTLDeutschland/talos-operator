@@ -13,7 +13,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/rs/zerolog v1.35.1
 	github.com/samber/lo v1.52.0
-	github.com/siderolabs/talos/pkg/machinery v1.14.0
+	github.com/siderolabs/talos/pkg/machinery v1.14.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
@@ -115,7 +115,7 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.9 // indirect
 	github.com/siderolabs/crypto v0.6.5 // indirect
-	github.com/siderolabs/gen v0.8.7 // indirect
+	github.com/siderolabs/gen v0.8.8 // indirect
 	github.com/siderolabs/go-api-signature v0.3.13 // indirect
 	github.com/siderolabs/go-pointer v1.0.1 // indirect
 	github.com/siderolabs/net v0.4.0 // indirect

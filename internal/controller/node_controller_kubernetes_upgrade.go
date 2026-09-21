@@ -273,20 +273,15 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 			return nil, nil
 		}
 
-		// this usually means no_reboot, but we leave it to Talos' best judgement.
-		applyMode := machine.ApplyConfigurationRequest_AUTO
-		if opStatus.KubernetesComponentUpgrade.ComponentName == KubernetesComponentKubelet &&
-			hasLonghorn {
-			// take no prisoners with longhorn
-			// (besides, we already drained the node)
-			applyMode = machine.ApplyConfigurationRequest_REBOOT
-		}
+		// longhorn and kubelet upgrades do not play nice, so we trigger a reboot if there hasn't already been one
+		needsReboot := opStatus.KubernetesComponentUpgrade.ComponentName == KubernetesComponentKubelet &&
+			hasLonghorn
 
 		req := &machine.ApplyConfigurationRequest{
-			Mode: applyMode,
+			Mode: machine.ApplyConfigurationRequest_AUTO,
 			Data: data,
 		}
-		_, err = talosClient.ApplyConfiguration(tCtx, req)
+		applyResp, err := talosClient.ApplyConfiguration(tCtx, req)
 		if err != nil {
 			err = r.updateOpStatus(
 				ctx,
@@ -302,12 +297,72 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 			}
 			return nil, nil
 		}
+		if needsReboot && len(applyResp.Messages) > 0 {
+			for _, msg := range applyResp.Messages {
+				if msg.Mode == machine.ApplyConfigurationRequest_REBOOT { // nolint:staticcheck
+					needsReboot = false // Talos did it for us
+				}
+			}
+		}
+
+		if needsReboot {
+			err = r.updateOpStatus(
+				ctx,
+				NodeOperationPhaseKubeletReboot,
+				NodeOperationReasonRebootRequired,
+				"Reboot required for Longhorn and kubelet upgrade",
+			)
+		} else {
+			err = r.updateOpStatus(
+				ctx,
+				NodeOperationPhaseVerifying,
+				NodeOperationReasonSuccessfulApply,
+				"Kubernetes component upgrade applied, verifying upgrade",
+			)
+		}
+		if err != nil {
+			return nil, err
+		}
+
+	case NodeOperationPhaseKubeletReboot:
+		err = talosClient.Reboot(tCtx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to request reboot during kubelet upgrade: %w", err)
+		}
+
+		err = r.updateOpStatus(
+			ctx,
+			NodeOperationPhaseVerifyReboot,
+			NodeOperationReasonRebootRequired,
+			"Reboot required for kubelet upgrade",
+		)
+		if err != nil {
+			return nil, err
+		}
+
+	case NodeOperationPhaseVerifyReboot:
+		if !r.hasNodeRebootedYet(tCtx, talosClient, remoteClient, node) {
+			if r.hasPhaseTimedOut(node, cluster) {
+				err = r.updateOpStatus(
+					ctx,
+					NodeOperationPhaseFailed,
+					NodeOperationReasonTimedOutVerifyingReboot,
+					"Node reboot verification timed out",
+				)
+				if err != nil {
+					return nil, err
+				}
+				return nil, nil
+			}
+
+			return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+		}
 
 		err = r.updateOpStatus(
 			ctx,
 			NodeOperationPhaseVerifying,
-			NodeOperationReasonSuccessfulApply,
-			"Kubernetes component upgrade applied, verifying upgrade",
+			NodeOperationReasonSuccessfulReboot,
+			"Node reboot verified successfully",
 		)
 		if err != nil {
 			return nil, err

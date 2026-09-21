@@ -11,12 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Define these in your cluster resources: `cluster.spec.talosVersionContract: v1.14` (adjust for your own Talos versions)
 - **Added** initial support for Talos v1.14.
 
-## v0.14.0 - 2026-09-21
+## v0.14.0 - 2026-09-22
 
 - **Added** `cluster.spec.talosVersionContract` to explicitly specify the configuration generator version for Talos.
   - This is somewhat comparable to NixOS's `system.stateVersion` if you're familiar with that terminology. If not:
   - This setting directly affects which version of the configuration generator is used by the Talos machinery in the operator. This changes which configuration features will be emitted, such as multi-doc HostnameConfig following Talos 1.12, and many other multi-doc configs introduced in subsequent Talos versions.
   - **It is recommended to set this to your minimum Talos version.** If you decide to upgrade your version contract, it is recommended to disable maintenance windows (`cluster.spec.options.maintenanceWindow.enabled: false`), review each node's `status.effectiveConfig`, and make the required changes to all of your inline patches and patchRefs accordingly.
+- **Fixed** Longhorn reboot logic in preparation for Talos v1.14.
 - **Updated** various Go dependencies.
 
 ## v0.13.0 - 2026-09-09

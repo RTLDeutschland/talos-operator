@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var DefaultTalosVersionContract = config.TalosVersion1_13
+var DefaultTalosVersionContract = config.TalosVersion1_14
 
 // driftedClock is a clock that intentionally skews behind by 5 seconds,
 // so that the generated mTLS client cert start date is intentionally 5 seconds behind

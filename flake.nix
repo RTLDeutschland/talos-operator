@@ -31,7 +31,7 @@
         fileset = lib.fileset.unions [
           ./go.mod
           ./go.sum
-          (lib.fileset.fileFilter (f: f.hasExt "go" && ! (lib.strings.hasPrefix "zz_generated" f.name)) ./.)
+          (lib.fileset.fileFilter (f: f.hasExt "go") ./.)
         ];
       };
       ldflags = [
@@ -77,9 +77,6 @@
           inherit version;
           inherit src;
 
-          preBuild = ''
-            ${pkgs.kubernetes-controller-tools}/bin/controller-gen object paths=./...
-          '';
           subPackages = ["cmd/kubectl-talos"];
           inherit env;
           inherit ldflags;
@@ -99,9 +96,6 @@
           inherit version;
           inherit src;
 
-          preBuild = ''
-            ${pkgs.kubernetes-controller-tools}/bin/controller-gen object paths=./...
-          '';
           subPackages = ["cmd/manager"];
           inherit env;
           inherit ldflags;

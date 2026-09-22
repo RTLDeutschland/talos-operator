@@ -213,6 +213,12 @@ func GenerateMachineConfig(
 	// try to parse version contract from cluster spec, otherwise default to latest
 	versionContractStr := cluster.Spec.TalosVersionContract
 	var versionContract *config.VersionContract = DefaultTalosVersionContract // current is a nil pointer, oops
+	// FIXME: remove after release v0.14.0
+	if versionContractStr == "v1.14" {
+		return nil, patchHierarchy, fmt.Errorf(
+			"Talos v1.14 is not supported in this operator release",
+		)
+	}
 	if versionContractStr != "" {
 		versionContract, err = config.ParseContractFromVersion(versionContractStr)
 		if err != nil {

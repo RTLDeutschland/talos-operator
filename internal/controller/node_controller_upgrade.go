@@ -130,7 +130,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 		if err := r.updateOpStatus(
 			ctx,
 			NodeOperationPhaseFailed,
-			NodeReasonConfigSerializationFailed,
+			NodeConditionReasonFailedImageValidation,
 			fmt.Sprintf("Failed to parse install image Talos release: %v", desiredImageErr),
 		); err != nil {
 			return nil, fmt.Errorf("error updating operation status: %w", err)

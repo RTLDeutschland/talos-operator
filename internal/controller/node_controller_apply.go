@@ -106,7 +106,21 @@ func (r *NodeReconciler) handleNodeApply(
 	}
 
 	// parse desired install image / schematic
-	desiredImage := cfg.Machine().Install().Image()
+	desiredImage, err := GetInstallImage(cfg)
+	if err != nil {
+		err = r.updateOpStatus(ctx,
+			NodeOperationPhaseFailed,
+			NodeOperationReasonFailedImageValidation,
+			fmt.Sprintf("Failed to get desired install image: %v", err),
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"failed to update operation status after failing to get desired install image: %w",
+				err,
+			)
+		}
+		return nil, nil
+	}
 	desiredTalosVersion, desiredSchematicID, desiredImageErr := parseImageTalosRelease(desiredImage)
 	hasSchematic := len(desiredSchematicID) == 64
 

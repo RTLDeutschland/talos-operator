@@ -194,9 +194,8 @@ func (r *NodeReconciler) reconcileNodeStatus(
 	// OVAs and maintenance mode disk images don't install on provision, so it's possible
 	// for the config to say one thing but the machine to be running another.
 	var runningImageExactlyEqual bool = true
-	configuredTalosVersion, configuredSchematicID, err := parseImageTalosRelease(
-		expectedConfig.Machine().Install().Image(),
-	)
+	configuredImage, _ := GetInstallImage(expectedConfig) // error is handled for us below
+	configuredTalosVersion, configuredSchematicID, err := parseImageTalosRelease(configuredImage)
 	if err != nil {
 		updateErr := r.updateNodeStatus(ctx, func(n *talosv1alpha1.Node) {
 			meta.SetStatusCondition(&n.Status.Conditions, metav1.Condition{

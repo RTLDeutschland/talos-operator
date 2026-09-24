@@ -121,7 +121,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 	}
 
 	// parse desired install image / schematic
-	desiredImage := cfg.Machine().Install().Image()
+	desiredImage, _ := GetInstallImage(cfg)
 	desiredTalosVersion, desiredSchematicID, desiredImageErr := parseImageTalosRelease(
 		desiredImage,
 	)
@@ -280,7 +280,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 	case NodeOperationPhaseUpgrade113ImagePull:
 		respStream, err := talosClient.ImageClient.Pull(tCtx, &machine.ImageServicePullRequest{
 			Containerd: systemContainerd,
-			ImageRef:   cfg.Machine().Install().Image(),
+			ImageRef:   desiredImage,
 		})
 		if err != nil {
 			if err := r.updateOpStatus(
@@ -354,7 +354,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 			&machine.LifecycleServiceUpgradeRequest{
 				Containerd: systemContainerd,
 				Source: &machine.InstallArtifactsSource{
-					ImageName: cfg.Machine().Install().Image(),
+					ImageName: desiredImage,
 				},
 			},
 		)
@@ -444,7 +444,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 
 		_, err := talosClient.UpgradeWithOptions( // nolint:staticcheck // SA1019 legacy support path
 			ttCtx,
-			client.WithUpgradeImage(cfg.Machine().Install().Image()),
+			client.WithUpgradeImage(desiredImage),
 		)
 		if err != nil {
 			if err := r.updateOpStatus(

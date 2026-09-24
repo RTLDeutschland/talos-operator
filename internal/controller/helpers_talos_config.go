@@ -770,3 +770,15 @@ func RedactMachineConfig(cfg string) string {
 	out = base64Re.ReplaceAllString(out, ": <redacted>")
 	return out
 }
+
+func GetInstallImage(cfg config.Provider) (string, error) {
+	if cfg.UnattendedInstallConfig() != nil &&
+		cfg.UnattendedInstallConfig().InstallerImage() != "" {
+		return cfg.UnattendedInstallConfig().InstallerImage(), nil
+	}
+	if cfg.Machine() != nil && cfg.Machine().Install() != nil &&
+		cfg.Machine().Install().Image() != "" {
+		return cfg.Machine().Install().Image(), nil
+	}
+	return "", fmt.Errorf("no install image found")
+}

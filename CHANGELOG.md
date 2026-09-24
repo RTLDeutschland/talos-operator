@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Define these in your cluster resources: `cluster.spec.talosVersionContract: v1.14` (adjust for your own Talos versions)
 - **Added** initial support for Talos v1.14.
 
+## v0.14.1 - 2026-09-24
+
+- **Fixed** API to include generated files.
+- **Fixed** container build: now includes CA certificates, which are necessary for the Node upgrade preflight image existence check.
+
 ## v0.14.0 - 2026-09-22
 
 - **Added** `cluster.spec.talosVersionContract` to explicitly specify the configuration generator version for Talos.

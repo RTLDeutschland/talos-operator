@@ -113,10 +113,18 @@
         operator-container = n2cPkgs.nix2container.buildImage {
           name = "ghcr.io/rtldeutschland/talos-operator";
           tag = lib.strings.concatStrings ["v" version];
+          copyToRoot =
+            pkgs.runCommandWith {
+              name = "talos-operator-container-root";
+            }
+            ''
+              mkdir -p $out/etc
+              ln -s ${pkgs.cacert.out}/etc/ssl $out/etc/ssl
+            '';
           config = {
-            entrypoint = ["${self.packages.${system}.operator-manager}/bin/manager"];
-            user = "65532";
-            labels = {
+            Entrypoint = ["${self.packages.${system}.operator-manager}/bin/manager"];
+            User = "65532";
+            Labels = {
               "org.opencontainers.image.source" = "https://github.com/RTLDeutschland/talos-operator";
               "org.opencontainers.image.licenses" = "MIT";
               "org.opencontainers.image.version" = version;

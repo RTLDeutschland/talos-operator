@@ -39,6 +39,7 @@ func rootCommand() *cobra.Command {
 		kubectlCmd(),
 		talosctlCmd(),
 		createCmdGroup(),
+		dashboardCmd(),
 	)
 	return cmd
 }

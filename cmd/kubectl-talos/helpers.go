@@ -52,15 +52,17 @@ func renderSpinnerLine(text, color string) {
 	fmt.Fprintf(spinnerOut, "%s%s  %s%s", colorCode(color), frame, text, ansiReset)
 }
 
-func watchResource(ctx context.Context, resourceType, namespace, name string) error {
+// getKubernetesClient returns a controller-runtime client with the usual client-go scheme and our
+// v1alpha1 scheme, the default namespace from the config, and any error encountered.
+func getKubernetesClient() (client.Client, string, error) {
 	scheme := runtime.NewScheme()
 	err := clientgoscheme.AddToScheme(scheme)
 	if err != nil {
-		return fmt.Errorf("failed to add client-go scheme: %w", err)
+		return nil, "", fmt.Errorf("failed to add client-go scheme: %w", err)
 	}
 	err = talosv1alpha1.AddToScheme(scheme)
 	if err != nil {
-		return fmt.Errorf("failed to add talosv1alpha1 scheme: %w", err)
+		return nil, "", fmt.Errorf("failed to add talosv1alpha1 scheme: %w", err)
 	}
 
 	// load config
@@ -69,21 +71,33 @@ func watchResource(ctx context.Context, resourceType, namespace, name string) er
 	cfg := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(cfgRules, cfgOverrides)
 	restCfg, err := cfg.ClientConfig()
 	if err != nil {
-		return fmt.Errorf("failed to get REST config: %w", err)
-	}
-
-	// resolve default namespace from config
-	if namespace == "" {
-		ns, _, err := cfg.Namespace()
-		if err != nil {
-			return fmt.Errorf("failed to get default namespace from kubeconfig: %w", err)
-		}
-		namespace = ns
+		return nil, "", fmt.Errorf("failed to get REST config: %w", err)
 	}
 
 	crClient, err := client.New(restCfg, client.Options{Scheme: scheme})
 	if err != nil {
-		return fmt.Errorf("failed to create Kubernetes client: %w", err)
+		return nil, "", fmt.Errorf("failed to create Kubernetes client: %w", err)
+	}
+
+	// resolve default namespace from config
+	defaultNamespace, _, err := cfg.Namespace()
+	if err != nil {
+		return nil, defaultNamespace, fmt.Errorf(
+			"failed to get default namespace from kubeconfig: %w",
+			err,
+		)
+	}
+
+	return crClient, defaultNamespace, nil
+}
+
+func watchResource(ctx context.Context, resourceType, namespace, name string) error {
+	crClient, defaultNamespace, err := getKubernetesClient()
+	if err != nil {
+		return fmt.Errorf("failed to get Kubernetes client: %w", err)
+	}
+	if namespace == "" {
+		namespace = defaultNamespace
 	}
 
 	// block forever until the operation completes

@@ -270,15 +270,18 @@ func GenerateMachineConfig(
 		}
 		patchData += string(k8sKubeletConfigBytes) + "\n---\n"
 
-		k8sKubeProxyConfig := k8s.NewKubeProxyConfigV1Alpha1()
-		k8sKubeProxyConfig.ProxyImage = "registry.k8s.io/kube-proxy:" + k8sVersions.Kubelet
-		k8sKubeProxyConfigBytes, err := yaml.Marshal(k8sKubeProxyConfig)
-		if err != nil {
-			return nil, patchHierarchy, fmt.Errorf("failed to marshal kube-proxy config: %w", err)
-		}
-		patchData += string(k8sKubeProxyConfigBytes) + "\n---\n"
-
 		if node.Spec.Role == Controlplane {
+			k8sKubeProxyConfig := k8s.NewKubeProxyConfigV1Alpha1()
+			k8sKubeProxyConfig.ProxyImage = "registry.k8s.io/kube-proxy:" + k8sVersions.Kubelet
+			k8sKubeProxyConfigBytes, err := yaml.Marshal(k8sKubeProxyConfig)
+			if err != nil {
+				return nil, patchHierarchy, fmt.Errorf(
+					"failed to marshal kube-proxy config: %w",
+					err,
+				)
+			}
+			patchData += string(k8sKubeProxyConfigBytes) + "\n---\n"
+
 			k8sAPIServerConfig := k8s.NewKubeAPIServerConfigV1Alpha1()
 			k8sAPIServerConfig.PodImage = "registry.k8s.io/kube-apiserver:" + k8sVersions.APIServer
 			k8sAPIServerConfigBytes, err := yaml.Marshal(k8sAPIServerConfig)

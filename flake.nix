@@ -35,6 +35,8 @@
         ];
       };
       ldflags = [
+        "-s"
+        "-w"
         "-X main.Version=${version}"
       ];
       env.CGO_ENABLED = "0";

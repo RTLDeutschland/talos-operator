@@ -68,7 +68,6 @@
     in {
       formatter = pkgs.alejandra;
       devShells.default = pkgs.mkShell {packages = devPackages;};
-      packages.default = self.packages.${system}.kubectl-talos;
 
       packages = {
         # kubectl-talos plugin
@@ -90,6 +89,11 @@
           };
         });
 
+        # kubectl-talos plugin native cross-compile (as opposed to Nix cross-compile, which doesn't even exist on Windows)
+        kubectl-talos-crosscompile = import ./kubectl-talos-cross.nix {
+          inherit pkgs lib version src vendorHash env ldflags;
+        };
+
         # operator manager binary
         operator-manager = pkgs.buildGoModule (finalAttrs: {
           pname = "talos-operator-manager";
@@ -108,6 +112,16 @@
             license = lib.licenses.mit;
           };
         });
+
+        # default build containing native kubectl-talos & manager binaries
+        default =
+          pkgs.symlinkJoin {
+            name = "talos-operator-default";
+            paths = [
+              self.packages.${system}.kubectl-talos
+              self.packages.${system}.operator-manager
+            ];
+          };
 
         # container containing operator-manager
         operator-container = n2cPkgs.nix2container.buildImage {

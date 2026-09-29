@@ -6,11 +6,11 @@ Supporting versions: **Talos v1.12–v1.14**, **Kubernetes 1.34–1.37** (operat
 
 ## Motivation
 
-talosctl is great, but there is large potential for human error. Some of this could be mitigated by using wrapper scripts and CI, but this often results in poor visibility and inflexibility.
+talosctl is great, but there is large potential for human error. Some of this could be mitigated by using wrapper scripts and CI, but this often results in poor visibility.
 
 The Talos operator aims to give cluster operators a single pane of glass to configure and maintain Talos clusters, declaratively, at a large scale.
 
-The operator also strives for safety and correctness in day-to-day operations such as Kubernetes drains. To that effect, the operator respects things like PodDisruptionBudgets and fails early if they can't be met.
+The operator also strives for safety and correctness in its maintenance logic, including Kubernetes drains. The operator respects things like PodDisruptionBudgets and fails early if they can't be met.
 
 ## Features
 
@@ -68,18 +68,3 @@ Useful toggles under `features`:
 ### Kustomize
 
 Alternatively, the kubebuilder-scaffolded Kustomize manifests can be found under `config/`, with a deployable overlay in `config/_deploy/`.
-
-## Contributing
-
-### Development Environment
-
-This project uses [nix-direnv](https://github.com/nix-community/nix-direnv) for reproducible development environments and [direnv](https://direnv.net/) for automatic environment loading.
-
-To set up:
-```sh
-# (assuming devbox and direnv are installed)
-cd talos-operator
-direnv allow
-```
-
-This project uses Just as an alternative to Make. Run `just --list` to see the available recipes.

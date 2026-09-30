@@ -245,120 +245,6 @@ func GenerateMachineConfig(
 		)
 	}
 
-	// kubernetes version patch
-	patchHierarchy = append(patchHierarchy, talosv1alpha1.PatchHierarchyElement{
-		Source:               "node.status.kubernetesVersions",
-		Synthetic:            true,
-		SyntheticExplanation: "a patch defining all kubernetes components and their versions, defaulting from cluster.spec.kubernetesVersion",
-	})
-
-	k8sVersions := node.Status.KubernetesVersions
-	if k8sVersions == nil {
-		k8sVersions = makeDefaultKubernetesVersions(node, cluster)
-	}
-
-	// FIXME(deprecation): When dropping support for Talos < 1.14
-	if versionContract.MultidocKubernetesConfigSupported() {
-		// v1.14+
-		patchData := ""
-
-		k8sKubeletConfig := k8s.NewKubeletConfigV1Alpha1()
-		k8sKubeletConfig.KubeletImage = "ghcr.io/siderolabs/kubelet:" + k8sVersions.Kubelet
-		k8sKubeletConfigBytes, err := yaml.Marshal(k8sKubeletConfig)
-		if err != nil {
-			return nil, patchHierarchy, fmt.Errorf("failed to marshal kubelet config: %w", err)
-		}
-		patchData += string(k8sKubeletConfigBytes) + "\n---\n"
-
-		if node.Spec.Role == Controlplane {
-			k8sKubeProxyConfig := k8s.NewKubeProxyConfigV1Alpha1()
-			k8sKubeProxyConfig.ProxyImage = "registry.k8s.io/kube-proxy:" + k8sVersions.Kubelet
-			k8sKubeProxyConfigBytes, err := yaml.Marshal(k8sKubeProxyConfig)
-			if err != nil {
-				return nil, patchHierarchy, fmt.Errorf(
-					"failed to marshal kube-proxy config: %w",
-					err,
-				)
-			}
-			patchData += string(k8sKubeProxyConfigBytes) + "\n---\n"
-
-			k8sAPIServerConfig := k8s.NewKubeAPIServerConfigV1Alpha1()
-			k8sAPIServerConfig.PodImage = "registry.k8s.io/kube-apiserver:" + k8sVersions.APIServer
-			k8sAPIServerConfigBytes, err := yaml.Marshal(k8sAPIServerConfig)
-			if err != nil {
-				return nil, patchHierarchy, fmt.Errorf(
-					"failed to marshal api server config: %w",
-					err,
-				)
-			}
-			patchData += string(k8sAPIServerConfigBytes) + "\n---\n"
-
-			k8sControllerManagerConfig := k8s.NewKubeControllerManagerConfigV1Alpha1()
-			k8sControllerManagerConfig.PodImage = "registry.k8s.io/kube-controller-manager:" + k8sVersions.ControllerManager
-			k8sControllerManagerConfigBytes, err := yaml.Marshal(k8sControllerManagerConfig)
-			if err != nil {
-				return nil, patchHierarchy, fmt.Errorf(
-					"failed to marshal controller manager config: %w",
-					err,
-				)
-			}
-			patchData += string(k8sControllerManagerConfigBytes) + "\n---\n"
-
-			k8sSchedulerConfig := k8s.NewKubeSchedulerConfigV1Alpha1()
-			k8sSchedulerConfig.PodImage = "registry.k8s.io/kube-scheduler:" + k8sVersions.Scheduler
-			k8sSchedulerConfigBytes, err := yaml.Marshal(k8sSchedulerConfig)
-			if err != nil {
-				return nil, patchHierarchy, fmt.Errorf(
-					"failed to marshal scheduler config: %w",
-					err,
-				)
-			}
-			patchData += string(k8sSchedulerConfigBytes) + "\n---\n"
-		}
-
-		configProvider, err = addPatchToProvider(configProvider, patchData)
-		if err != nil {
-			return nil, patchHierarchy, fmt.Errorf(
-				"failed to add kubernetes versions patch: %w",
-				err,
-			)
-		}
-	} else {
-		// sub-1.14 kubernetes version patch
-		machinePatchData := KV{
-			"kubelet": KV{
-				"image": "ghcr.io/siderolabs/kubelet:" + k8sVersions.Kubelet,
-			},
-		}
-		operatorPatchData := KV{
-			"version": "v1alpha1",
-			"machine": machinePatchData,
-		}
-		if node.Spec.Role == Controlplane {
-			operatorPatchData["cluster"] = KV{
-				"apiServer": KV{
-					"image": "registry.k8s.io/kube-apiserver:" + k8sVersions.APIServer,
-				},
-				"controllerManager": KV{
-					"image": "registry.k8s.io/kube-controller-manager:" + k8sVersions.ControllerManager,
-				},
-				"scheduler": KV{
-					"image": "registry.k8s.io/kube-scheduler:" + k8sVersions.Scheduler,
-				},
-				"proxy": KV{
-					"image": "registry.k8s.io/kube-proxy:" + k8sVersions.Kubelet,
-				},
-			}
-		}
-		configProvider, err = addPatchToProvider(configProvider, mustYaml(operatorPatchData))
-		if err != nil {
-			return nil, patchHierarchy, fmt.Errorf(
-				"failed to add kubernetes versions patch: %w",
-				err,
-			)
-		}
-	}
-
 	// add Cluster referenced patches
 	for i, patchRef := range cluster.Spec.PatchRefs {
 		patchHierarchy = append(patchHierarchy, talosv1alpha1.PatchHierarchyElement{
@@ -621,6 +507,158 @@ func GenerateMachineConfig(
 	patchHierarchyNew = append(patchHierarchyNew, patchHierarchy...)
 
 	patchHierarchy = patchHierarchyNew
+
+	// kubernetes version patch
+	k8sVersions := node.Status.KubernetesVersions
+	if k8sVersions == nil {
+		k8sVersions = makeDefaultKubernetesVersions(node, cluster)
+	}
+
+	// FIXME(deprecation): When dropping support for Talos < 1.14, remove all of the following fallbacks
+
+	// kubernetes version patches:
+	// kubelet
+	kubePatchData := ""
+	// support both new-style and legacy-style config syntax by testing for its presence in the
+	// generated config
+	//
+	// this works because in versionContract >= 1.14, the generator always emits modern config by
+	// default, but users can still $delete patch that config and use the old style if there's
+	// legitimate reason.
+	if _, ok := configProvider.K8sKubeletConfig().(*k8s.KubeletConfigV1Alpha1); ok ||
+		configProvider.K8sKubeletConfig() == nil &&
+			versionContract.MultidocKubernetesConfigSupported() {
+		k8sKubeletConfig := k8s.NewKubeletConfigV1Alpha1()
+		k8sKubeletConfig.KubeletImage = "ghcr.io/siderolabs/kubelet:" + k8sVersions.Kubelet
+		k8sKubeletConfigBytes, err := yaml.Marshal(k8sKubeletConfig)
+		if err != nil {
+			return nil, patchHierarchy, fmt.Errorf("failed to marshal kubelet config: %w", err)
+		}
+		kubePatchData += string(k8sKubeletConfigBytes) + "\n---\n"
+	} else {
+		kubeletPatchData := KV{
+			"version": "v1alpha1",
+			"machine": KV{
+				"kubelet": KV{
+					"image": "ghcr.io/siderolabs/kubelet:" + k8sVersions.Kubelet,
+				},
+			},
+		}
+		kubePatchData += mustYaml(kubeletPatchData) + "\n---\n"
+	}
+
+	if node.Spec.Role == Controlplane {
+		if _, ok := configProvider.K8sAPIServerConfig().(*k8s.KubeAPIServerConfigV1Alpha1); ok ||
+			configProvider.K8sAPIServerConfig() == nil &&
+				versionContract.MultidocKubernetesConfigSupported() {
+			k8sAPIServerConfig := k8s.NewKubeAPIServerConfigV1Alpha1()
+			k8sAPIServerConfig.PodImage = "registry.k8s.io/kube-apiserver:" + k8sVersions.APIServer
+			k8sAPIServerConfigBytes, err := yaml.Marshal(k8sAPIServerConfig)
+			if err != nil {
+				return nil, patchHierarchy, fmt.Errorf(
+					"failed to marshal api server config: %w",
+					err,
+				)
+			}
+			kubePatchData += string(k8sAPIServerConfigBytes) + "\n---\n"
+		} else {
+			apiServerPatchData := KV{
+				"version": "v1alpha1",
+				"cluster": KV{
+					"apiServer": KV{
+						"image": "registry.k8s.io/kube-apiserver:" + k8sVersions.APIServer,
+					},
+				},
+			}
+			kubePatchData += mustYaml(apiServerPatchData) + "\n---\n"
+		}
+
+		if _, ok := configProvider.K8sControllerManagerConfig().(*k8s.KubeControllerManagerConfigV1Alpha1); ok ||
+			configProvider.K8sControllerManagerConfig() == nil && versionContract.MultidocKubernetesConfigSupported() {
+			k8sControllerManagerConfig := k8s.NewKubeControllerManagerConfigV1Alpha1()
+			k8sControllerManagerConfig.PodImage = "registry.k8s.io/kube-controller-manager:" + k8sVersions.ControllerManager
+			k8sControllerManagerConfigBytes, err := yaml.Marshal(k8sControllerManagerConfig)
+			if err != nil {
+				return nil, patchHierarchy, fmt.Errorf(
+					"failed to marshal controller manager config: %w",
+					err,
+				)
+			}
+			kubePatchData += string(k8sControllerManagerConfigBytes) + "\n---\n"
+		} else {
+			controllerManagerPatchData := KV{
+				"version": "v1alpha1",
+				"cluster": KV{
+					"controllerManager": KV{
+						"image": "registry.k8s.io/kube-controller-manager:" + k8sVersions.ControllerManager,
+					},
+				},
+			}
+			kubePatchData += mustYaml(controllerManagerPatchData) + "\n---\n"
+		}
+
+		if _, ok := configProvider.K8sSchedulerConfig().(*k8s.KubeSchedulerConfigV1Alpha1); ok ||
+			configProvider.K8sSchedulerConfig() == nil &&
+				versionContract.MultidocKubernetesConfigSupported() {
+			k8sSchedulerConfig := k8s.NewKubeSchedulerConfigV1Alpha1()
+			k8sSchedulerConfig.PodImage = "registry.k8s.io/kube-scheduler:" + k8sVersions.Scheduler
+			k8sSchedulerConfigBytes, err := yaml.Marshal(k8sSchedulerConfig)
+			if err != nil {
+				return nil, patchHierarchy, fmt.Errorf(
+					"failed to marshal scheduler config: %w",
+					err,
+				)
+			}
+			kubePatchData += string(k8sSchedulerConfigBytes) + "\n---\n"
+		} else {
+			schedulerPatchData := KV{
+				"version": "v1alpha1",
+				"cluster": KV{
+					"scheduler": KV{
+						"image": "registry.k8s.io/kube-scheduler:" + k8sVersions.Scheduler,
+					},
+				},
+			}
+			kubePatchData += mustYaml(schedulerPatchData) + "\n---\n"
+		}
+
+		if _, ok := configProvider.K8sProxyConfig().(*k8s.KubeProxyConfigV1Alpha1); ok ||
+			configProvider.K8sProxyConfig() == nil &&
+				versionContract.MultidocKubernetesConfigSupported() {
+			k8sKubeProxyConfig := k8s.NewKubeProxyConfigV1Alpha1()
+			k8sKubeProxyConfig.ProxyImage = "registry.k8s.io/kube-proxy:" + k8sVersions.Kubelet
+			k8sKubeProxyConfigBytes, err := yaml.Marshal(k8sKubeProxyConfig)
+			if err != nil {
+				return nil, patchHierarchy, fmt.Errorf(
+					"failed to marshal kube-proxy config: %w",
+					err,
+				)
+			}
+			kubePatchData += string(k8sKubeProxyConfigBytes) + "\n---\n"
+		} else {
+			kubeProxyPatchData := KV{
+				"version": "v1alpha1",
+				"cluster": KV{
+					"proxy": KV{
+						"image": "registry.k8s.io/kube-proxy:" + k8sVersions.Kubelet,
+					},
+				},
+			}
+			kubePatchData += mustYaml(kubeProxyPatchData) + "\n---\n"
+		}
+	}
+
+	patchHierarchy = append(patchHierarchy, talosv1alpha1.PatchHierarchyElement{
+		Source:    "node.status.kubernetesVersions",
+		Synthetic: true,
+		SyntheticExplanation: ("a patch defining all kubernetes components and their versions, " +
+			"sourced from node.status.kubernetesVersions, " +
+			"defaulted from cluster.spec.kubernetesVersion"),
+	})
+	configProvider, err = addPatchToProvider(configProvider, kubePatchData)
+	if err != nil {
+		return nil, patchHierarchy, fmt.Errorf("failed to add kube patch data: %w", err)
+	}
 
 	// add cluster-name label
 	if !opts.WithoutRTLLabel {

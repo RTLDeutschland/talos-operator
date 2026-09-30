@@ -116,14 +116,13 @@
         });
 
         # default build containing native kubectl-talos & manager binaries
-        default =
-          pkgs.symlinkJoin {
-            name = "talos-operator-default";
-            paths = [
-              self.packages.${system}.kubectl-talos
-              self.packages.${system}.operator-manager
-            ];
-          };
+        default = pkgs.symlinkJoin {
+          name = "talos-operator-default";
+          paths = [
+            self.packages.${system}.kubectl-talos
+            self.packages.${system}.operator-manager
+          ];
+        };
 
         # container containing operator-manager
         operator-container = n2cPkgs.nix2container.buildImage {

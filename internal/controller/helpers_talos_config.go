@@ -661,7 +661,7 @@ func GenerateMachineConfig(
 	}
 
 	// add cluster-name label
-	if !opts.WithoutRTLLabel {
+	if opts == nil || !opts.WithoutRTLLabel {
 		patchHierarchy = append(patchHierarchy, talosv1alpha1.PatchHierarchyElement{
 			Source:               "operator:cluster-name-label",
 			Synthetic:            true,

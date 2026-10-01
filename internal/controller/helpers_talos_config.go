@@ -19,8 +19,6 @@ import (
 	talossecrets "github.com/siderolabs/talos/pkg/machinery/config/generate/secrets"
 	"github.com/siderolabs/talos/pkg/machinery/config/machine"
 	"github.com/siderolabs/talos/pkg/machinery/config/types/k8s"
-	"github.com/siderolabs/talos/pkg/machinery/config/types/network"
-	"github.com/siderolabs/talos/pkg/machinery/config/types/v1alpha1"
 	"go.yaml.in/yaml/v4"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -657,22 +655,10 @@ func GenerateMachineConfig(
 	}
 
 	// detect if the user is using the multi-doc hostname format or not, and add the appropriate hostname patch accordingly
-	var multiDocHostname bool
-	switch configProvider.NetworkHostnameConfig().(type) {
-	case *network.HostnameConfigV1Alpha1: // we kind of expect the generator to emit one of these
-		multiDocHostname = true
-	case *v1alpha1.Config:
-		multiDocHostname = false
-	case nil:
-		// but as a fallback:
-		// multi-doc hostname format was introduced in Talos v1.12, so if the version contract is older than that, we can assume they're using the old format
-		multiDocHostname = versionContract.Greater(config.TalosVersion1_11)
-	default:
-		multiDocHostname = false
-	}
-
 	var hostnamePatchData KV
-	if !multiDocHostname {
+	if v1a1Cfg != nil && v1a1Cfg.MachineConfig != nil &&
+		v1a1Cfg.MachineConfig.MachineNetwork != nil &&
+		v1a1Cfg.MachineConfig.MachineNetwork.NetworkHostname != "" { // nolint:staticcheck // supporting deprecated configuration
 		hostnamePatchData = KV{
 			"version": "v1alpha1",
 			"machine": KV{

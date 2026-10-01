@@ -72,6 +72,9 @@ func talosctlNode(cmd *cobra.Command, nodeName string, args ...string) error {
 
 	talosctlCmd := exec.CommandContext(cmd.Context(), "talosctl", talosctlArgs...)
 	talosctlCmd.Env = append(os.Environ(), fmt.Sprintf("TALOSCONFIG=%s", talosconfigFile.Name()))
+	talosctlCmd.Stdout = os.Stdout
+	talosctlCmd.Stderr = os.Stderr
+	talosctlCmd.Stdin = os.Stdin
 	err = talosctlCmd.Run()
 	if err != nil {
 		return fmt.Errorf("error executing talosctl command: %w", err)
@@ -83,7 +86,7 @@ func talosctlNode(cmd *cobra.Command, nodeName string, args ...string) error {
 func dashboardCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "dashboard NODE",
-		Short: "Runs talosctl dashboard for the given NODE",
+		Short: "Alias for talosctl <NODE> dashboard",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return talosctlNode(cmd, args[0], "dashboard")
@@ -94,10 +97,10 @@ func dashboardCmd() *cobra.Command {
 func extensionsCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "extensions NODE",
-		Short: "Runs talosctl extensions for the given NODE",
+		Short: "Alias for talosctl <NODE> get extensions",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return talosctlNode(cmd, args[0], "extensions")
+			return talosctlNode(cmd, args[0], "get", "extensions")
 		},
 	}
 }

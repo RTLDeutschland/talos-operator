@@ -613,7 +613,9 @@ func GenerateMachineConfig(
 	// (because we're v1.14+ and KubeAPIServerConfig was $patch: delete'd)
 	if v1a1Cfg != nil && v1a1Cfg.ClusterConfig != nil &&
 		v1a1Cfg.ClusterConfig.APIServerConfig != nil &&
-		len(v1a1Cfg.ClusterConfig.APIServerConfig.ExtraCertSANs) == 0 { // nolint:staticcheck // supporting deprecated configuration
+		len(
+			v1a1Cfg.ClusterConfig.APIServerConfig.ExtraCertSANs,
+		) == 0 { // nolint:staticcheck // supporting deprecated configuration
 		patchData := KV{
 			"version": "v1alpha1",
 			"cluster": KV{

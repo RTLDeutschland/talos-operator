@@ -40,6 +40,7 @@ func rootCommand() *cobra.Command {
 		talosctlCmd(),
 		createCmdGroup(),
 		dashboardCmd(),
+		extensionsCmd(),
 	)
 	return cmd
 }

@@ -609,6 +609,36 @@ func GenerateMachineConfig(
 		return nil, patchHierarchy, fmt.Errorf("failed to add kube patch data: %w", err)
 	}
 
+	// detect if cluster FQDN is missing from legacy apiServer configuration, and fix it
+	// (because we're v1.14+ and KubeAPIServerConfig was $patch: delete'd)
+	if v1a1Cfg != nil && v1a1Cfg.ClusterConfig != nil &&
+		v1a1Cfg.ClusterConfig.APIServerConfig != nil &&
+		len(v1a1Cfg.ClusterConfig.APIServerConfig.ExtraCertSANs) == 0 { // nolint:staticcheck // supporting deprecated configuration
+		patchData := KV{
+			"version": "v1alpha1",
+			"cluster": KV{
+				"apiServer": KV{
+					"certSANs": []string{
+						clusterFQDN,
+					},
+				},
+			},
+		}
+		configProvider, err = addPatchToProvider(configProvider, mustYaml(patchData))
+		if err != nil {
+			return nil, patchHierarchy, fmt.Errorf(
+				"failed to add API server extraCertSANs patch: %w",
+				err,
+			)
+		}
+
+		patchHierarchy = append(patchHierarchy, talosv1alpha1.PatchHierarchyElement{
+			Source:               "operator:api-server-extra-cert-sans",
+			Synthetic:            true,
+			SyntheticExplanation: "a patch fixing empty SANs in the legacy API server configuration",
+		})
+	}
+
 	// add cluster-name label
 	if opts == nil || !opts.WithoutRTLLabel {
 		patchHierarchy = append(patchHierarchy, talosv1alpha1.PatchHierarchyElement{

@@ -517,17 +517,17 @@ func GenerateMachineConfig(
 	// FIXME(deprecation): When dropping support for Talos < 1.14, remove all of the following fallbacks
 
 	// kubernetes version patches:
-	// kubelet
 	kubePatchData := ""
+
 	// support both new-style and legacy-style config syntax by testing for its presence in the
 	// generated config
 	//
 	// this works because in versionContract >= 1.14, the generator always emits modern config by
 	// default, but users can still $delete patch that config and use the old style if there's
 	// legitimate reason.
-	if _, ok := configProvider.K8sKubeletConfig().(*k8s.KubeletConfigV1Alpha1); ok ||
-		configProvider.K8sKubeletConfig() == nil &&
-			versionContract.MultidocKubernetesConfigSupported() {
+	v1a1Cfg := configProvider.RawV1Alpha1()
+
+	if !(v1a1Cfg != nil && v1a1Cfg.MachineConfig != nil && v1a1Cfg.MachineConfig.MachineKubelet != nil) { // nolint:staticcheck // supporting deprecated configuration
 		k8sKubeletConfig := k8s.NewKubeletConfigV1Alpha1()
 		k8sKubeletConfig.KubeletImage = "ghcr.io/siderolabs/kubelet:" + k8sVersions.Kubelet
 		k8sKubeletConfigBytes, err := yaml.Marshal(k8sKubeletConfig)
@@ -548,9 +548,7 @@ func GenerateMachineConfig(
 	}
 
 	if node.Spec.Role == Controlplane {
-		if _, ok := configProvider.K8sAPIServerConfig().(*k8s.KubeAPIServerConfigV1Alpha1); ok ||
-			configProvider.K8sAPIServerConfig() == nil &&
-				versionContract.MultidocKubernetesConfigSupported() {
+		if !(v1a1Cfg != nil && v1a1Cfg.ClusterConfig != nil && v1a1Cfg.ClusterConfig.APIServerConfig != nil) { // nolint:staticcheck // supporting deprecated configuration
 			k8sAPIServerConfig := k8s.NewKubeAPIServerConfigV1Alpha1()
 			k8sAPIServerConfig.PodImage = "registry.k8s.io/kube-apiserver:" + k8sVersions.APIServer
 			k8sAPIServerConfigBytes, err := yaml.Marshal(k8sAPIServerConfig)
@@ -573,8 +571,7 @@ func GenerateMachineConfig(
 			kubePatchData += mustYaml(apiServerPatchData) + "\n---\n"
 		}
 
-		if _, ok := configProvider.K8sControllerManagerConfig().(*k8s.KubeControllerManagerConfigV1Alpha1); ok ||
-			configProvider.K8sControllerManagerConfig() == nil && versionContract.MultidocKubernetesConfigSupported() {
+		if !(v1a1Cfg != nil && v1a1Cfg.ClusterConfig != nil && v1a1Cfg.ClusterConfig.ControllerManagerConfig != nil) { // nolint:staticcheck // supporting deprecated configuration
 			k8sControllerManagerConfig := k8s.NewKubeControllerManagerConfigV1Alpha1()
 			k8sControllerManagerConfig.PodImage = "registry.k8s.io/kube-controller-manager:" + k8sVersions.ControllerManager
 			k8sControllerManagerConfigBytes, err := yaml.Marshal(k8sControllerManagerConfig)
@@ -597,9 +594,7 @@ func GenerateMachineConfig(
 			kubePatchData += mustYaml(controllerManagerPatchData) + "\n---\n"
 		}
 
-		if _, ok := configProvider.K8sSchedulerConfig().(*k8s.KubeSchedulerConfigV1Alpha1); ok ||
-			configProvider.K8sSchedulerConfig() == nil &&
-				versionContract.MultidocKubernetesConfigSupported() {
+		if !(v1a1Cfg != nil && v1a1Cfg.ClusterConfig != nil && v1a1Cfg.ClusterConfig.SchedulerConfig != nil) { // nolint:staticcheck // supporting deprecated configuration
 			k8sSchedulerConfig := k8s.NewKubeSchedulerConfigV1Alpha1()
 			k8sSchedulerConfig.PodImage = "registry.k8s.io/kube-scheduler:" + k8sVersions.Scheduler
 			k8sSchedulerConfigBytes, err := yaml.Marshal(k8sSchedulerConfig)
@@ -622,9 +617,7 @@ func GenerateMachineConfig(
 			kubePatchData += mustYaml(schedulerPatchData) + "\n---\n"
 		}
 
-		if _, ok := configProvider.K8sProxyConfig().(*k8s.KubeProxyConfigV1Alpha1); ok ||
-			configProvider.K8sProxyConfig() == nil &&
-				versionContract.MultidocKubernetesConfigSupported() {
+		if !(v1a1Cfg != nil && v1a1Cfg.ClusterConfig != nil && v1a1Cfg.ClusterConfig.ProxyConfig != nil) { // nolint:staticcheck // supporting deprecated configuration
 			k8sKubeProxyConfig := k8s.NewKubeProxyConfigV1Alpha1()
 			k8sKubeProxyConfig.ProxyImage = "registry.k8s.io/kube-proxy:" + k8sVersions.Kubelet
 			k8sKubeProxyConfigBytes, err := yaml.Marshal(k8sKubeProxyConfig)

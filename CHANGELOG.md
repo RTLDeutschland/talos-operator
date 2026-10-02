@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Define these in your cluster resources: `cluster.spec.talosVersionContract: v1.14` (adjust for your own Talos versions)
 - **Added** initial support for Talos v1.14.
 
+### `kubectl talos`
+
+- **Improved** `talosctl`, now takes `NODE` instead of `CLUSTER`. Currently uses node FQDNs to connect to hosts, might add an annotation for kubectl-talos-specific overrides in the future.
+- **Added** `kubectl talos dashboard` and `kubectl talos extensions`, which are aliases for the equivalent `talosctl` commands.
+
 ## v0.14.1 - 2026-09-24
 
 - **Fixed** API to include generated files.

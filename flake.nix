@@ -22,7 +22,7 @@
 
       n2cPkgs = nix2container.packages.${system};
 
-      vendorHash = "sha256-FygExKqGMeN219zHOWyigKfOjNPQB7hB1xJp6QsrkSA=";
+      vendorHash = "sha256-Yotc+f+9R4g7jymz6IMNkVGWEclgHmBGvbpBe6pH+hk=";
       version = lib.strings.trim (builtins.readFile ./VERSION);
 
       # filter the app sources to avoid spurious rebuilds

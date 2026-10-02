@@ -611,7 +611,7 @@ func GenerateMachineConfig(
 
 	// detect if cluster FQDN is missing from legacy apiServer configuration, and fix it
 	// (because we're v1.14+ and KubeAPIServerConfig was $patch: delete'd)
-	if v1a1Cfg != nil && v1a1Cfg.ClusterConfig != nil &&
+	if node.Spec.Role == Controlplane && v1a1Cfg != nil && v1a1Cfg.ClusterConfig != nil &&
 		v1a1Cfg.ClusterConfig.APIServerConfig != nil &&
 		len(
 			v1a1Cfg.ClusterConfig.APIServerConfig.ExtraCertSANs,

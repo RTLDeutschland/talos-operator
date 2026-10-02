@@ -24,6 +24,7 @@ const (
 	EventActionStatusReconcile  = "StatusReconcile"
 	EventActionRunningOperation = "RunningOperation"
 
+	EventActionClusterReconcile           = "ClusterReconcile"
 	EventActionBootstrap                  = "Bootstrap"
 	EventActionApply                      = "Apply"
 	EventActionOSUpgrade                  = "OSUpgrade"

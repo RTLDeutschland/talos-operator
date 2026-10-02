@@ -92,6 +92,41 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		log.Info().
 			Str("kubernetes_version", DefaultKubernetesVersion).
 			Msg("Set default Kubernetes version")
+		r.Recorder.Eventf(
+			cluster,
+			nil,
+			corev1.EventTypeWarning,
+			EventReasonUpdated,
+			EventActionClusterReconcile,
+			"Set default Kubernetes version for cluster %s/%s to %s",
+			cluster.Namespace,
+			cluster.Name,
+			DefaultKubernetesVersion,
+		)
+	}
+
+	// set a default TalosVersionContract if not set
+	if cluster.Spec.TalosVersionContract == "" {
+		err := r.updateCluster(ctx, func(c *talosv1alpha1.Cluster) {
+			c.Spec.TalosVersionContract = DefaultTalosVersionContract.String()
+		})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		log.Info().
+			Str("talos_version_contract", DefaultTalosVersionContract.String()).
+			Msg("Set default Talos version contract")
+		r.Recorder.Eventf(
+			cluster,
+			nil,
+			corev1.EventTypeWarning,
+			EventReasonUpdated,
+			EventActionClusterReconcile,
+			"Set default Talos version contract for cluster %s/%s to %s",
+			cluster.Namespace,
+			cluster.Name,
+			DefaultTalosVersionContract.String(),
+		)
 	}
 
 	// set secretsRef if empty

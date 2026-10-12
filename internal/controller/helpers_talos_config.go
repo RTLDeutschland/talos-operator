@@ -612,10 +612,10 @@ func GenerateMachineConfig(
 	// detect if cluster FQDN is missing from legacy apiServer configuration, and fix it
 	// (because we're v1.14+ and KubeAPIServerConfig was $patch: delete'd)
 	if node.Spec.Role == Controlplane && v1a1Cfg != nil && v1a1Cfg.ClusterConfig != nil &&
-		v1a1Cfg.ClusterConfig.APIServerConfig != nil &&
+		v1a1Cfg.ClusterConfig.APIServerConfig != nil && // nolint:staticcheck // supporting deprecated configuration
 		len(
-			v1a1Cfg.ClusterConfig.APIServerConfig.ExtraCertSANs,
-		) == 0 { // nolint:staticcheck // supporting deprecated configuration
+			v1a1Cfg.ClusterConfig.APIServerConfig.ExtraCertSANs, // nolint:staticcheck // supporting deprecated configuration
+		) == 0 {
 		patchData := KV{
 			"version": "v1alpha1",
 			"cluster": KV{
@@ -651,9 +651,15 @@ func GenerateMachineConfig(
 
 		// FIXME(deprecation): When dropping support for Talos < 1.14
 		// detect if we should use old-style syntax, assuming old-style syntax is present:
-		raw := configProvider.RawV1Alpha1()
-		if raw != nil && raw.MachineConfig != nil && raw.MachineConfig.MachineNodeLabels != nil &&
-			len(raw.MachineConfig.MachineNodeLabels) > 0 { // nolint:staticcheck
+		hasOldNodeConfig := v1a1Cfg != nil && v1a1Cfg.MachineConfig != nil &&
+			(len(v1a1Cfg.MachineConfig.MachineNodeLabels) > 0 || // nolint:staticcheck // supporting deprecated configuration
+				len(v1a1Cfg.MachineConfig.MachineNodeAnnotations) > 0 || // nolint:staticcheck // supporting deprecated configuration
+				len(v1a1Cfg.MachineConfig.MachineNodeTaints) > 0) // nolint:staticcheck // supporting deprecated configuration
+		hasOldKubeletConfig := v1a1Cfg != nil && v1a1Cfg.MachineConfig != nil &&
+			v1a1Cfg.MachineConfig.MachineKubelet != nil && // nolint:staticcheck // supporting deprecated configuration
+			(v1a1Cfg.MachineConfig.MachineKubelet.KubeletRegisterWithFQDN != nil || // nolint:staticcheck // supporting deprecated configuration
+				v1a1Cfg.MachineConfig.MachineKubelet.KubeletNodeIP != nil) // nolint:staticcheck // supporting deprecated configuration
+		if hasOldNodeConfig || hasOldKubeletConfig {
 			nodeLabelPatchData := KV{
 				"version": "v1alpha1",
 				"machine": KV{
@@ -689,7 +695,7 @@ func GenerateMachineConfig(
 	// detect if the user is using the multi-doc hostname format or not, and add the appropriate hostname patch accordingly
 	var hostnamePatchData KV
 	if v1a1Cfg != nil && v1a1Cfg.MachineConfig != nil &&
-		v1a1Cfg.MachineConfig.MachineNetwork != nil &&
+		v1a1Cfg.MachineConfig.MachineNetwork != nil && // nolint:staticcheck // supporting deprecated configuration
 		v1a1Cfg.MachineConfig.MachineNetwork.NetworkHostname != "" { // nolint:staticcheck // supporting deprecated configuration
 		hostnamePatchData = KV{
 			"version": "v1alpha1",

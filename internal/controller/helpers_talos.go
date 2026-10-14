@@ -189,10 +189,12 @@ func getNodeBootID(
 // parseImageTalosRelease tries to parse the Talos version and schematic ID from an image string.
 // Schematic ID may be empty string if it cannot be parsed.
 func parseImageTalosRelease(image string) (semver.Version, string, error) {
-	imageRepo, imageTag, ok := strings.Cut(image, ":")
-	if !ok {
+	// split at the last colon so registry ports (registry.example.com:5000/...) don't end up in the tag
+	idx := strings.LastIndex(image, ":")
+	if idx < 0 {
 		return semver.Version{}, "", fmt.Errorf("invalid image format: %s", image)
 	}
+	imageRepo, imageTag := image[:idx], image[idx+1:]
 	schematicID := path.Base(imageRepo)
 	if len(schematicID) != 64 {
 		schematicID = ""

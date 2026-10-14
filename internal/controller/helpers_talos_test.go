@@ -37,6 +37,28 @@ func TestParseImageTalosRelease(t *testing.T) {
 	v = semver.MustParse("1.12.6-rc0+build.12345")
 	require.True(t, version.Equals(v))
 
+	// test registry with port, plain installer
+	version, schematicID, err = parseImageTalosRelease(
+		"registry.example.com:5000/siderolabs/installer:v1.12.6",
+	)
+	require.NoError(t, err)
+	require.Equal(t, "", schematicID)
+	v = semver.MustParse("1.12.6")
+	require.True(t, version.Equals(v))
+
+	// test registry with port and schematic
+	version, schematicID, err = parseImageTalosRelease(
+		"registry.example.com:5000/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.12.6",
+	)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		"376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba",
+		schematicID,
+	)
+	v = semver.MustParse("1.12.6")
+	require.True(t, version.Equals(v))
+
 	// test invalid images
 	images := []string{
 		"invalid-image",

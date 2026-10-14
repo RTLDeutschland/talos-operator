@@ -566,6 +566,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 			); err != nil {
 				return nil, fmt.Errorf("error updating operation status: %w", err)
 			}
+			return nil, nil
 		}
 
 		// if we're called as a subroutine of an Apply operation, go back to Applying, otherwise we're done

@@ -193,10 +193,7 @@ func (r *NodeReconciler) handleNodeProvisioning(
 		}
 
 		// assemble the config and send it
-		opts := &GenerateMachineConfigOptions{
-			WithoutRTLLabel:                !r.FeatureFlags.EnableRTLNodeLabel,
-			WithoutCrossNamespacePatchRefs: !r.FeatureFlags.EnableCrossNamespacePatchRefs,
-		}
+		opts := NewGenerateMachineConfigOptions(r.FeatureFlags)
 		cfg, _, err := GenerateMachineConfig(ctx, r.Client, node, opts)
 		if err != nil {
 			err := r.updateNodeStatus(ctx, func(n *talosv1alpha1.Node) {
@@ -338,10 +335,7 @@ func (r *NodeReconciler) handleNodeProvisioning(
 
 		// detect if the running OS image matches the desired image from config;
 		// disk-installed nodes don't upgrade on provision, so we may need to upgrade now.
-		opts := &GenerateMachineConfigOptions{
-			WithoutRTLLabel:                !r.FeatureFlags.EnableRTLNodeLabel,
-			WithoutCrossNamespacePatchRefs: !r.FeatureFlags.EnableCrossNamespacePatchRefs,
-		}
+		opts := NewGenerateMachineConfigOptions(r.FeatureFlags)
 		cfg, _, err := GenerateMachineConfig(ctx, r.Client, node, opts)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate machine config for image check: %w", err)

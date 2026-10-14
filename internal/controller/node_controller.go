@@ -185,11 +185,8 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	// update Node EffectiveConfig status
-	opts := &GenerateMachineConfigOptions{
-		WithoutRTLLabel:                !r.FeatureFlags.EnableRTLNodeLabel,
-		WithoutCrossNamespacePatchRefs: !r.FeatureFlags.EnableCrossNamespacePatchRefs,
-		WithoutSecrets:                 true,
-	}
+	opts := NewGenerateMachineConfigOptions(r.FeatureFlags)
+	opts.WithoutSecrets = true
 	cfg, patchHierarchy, err := GenerateMachineConfig(
 		ctx,
 		r.Client,

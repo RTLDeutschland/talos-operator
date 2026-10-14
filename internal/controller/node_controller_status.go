@@ -147,10 +147,7 @@ func (r *NodeReconciler) reconcileNodeStatus(
 	}
 
 	// generate a expectedConfig, the one we would expect the apply operation to apply
-	opts := &GenerateMachineConfigOptions{
-		WithoutRTLLabel:                !r.FeatureFlags.EnableRTLNodeLabel,
-		WithoutCrossNamespacePatchRefs: !r.FeatureFlags.EnableCrossNamespacePatchRefs,
-	}
+	opts := NewGenerateMachineConfigOptions(r.FeatureFlags)
 	expectedConfig, _, err := GenerateMachineConfig(ctx, r.Client, node, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate expected machine config: %w", err)

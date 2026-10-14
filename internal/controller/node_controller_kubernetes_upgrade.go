@@ -73,10 +73,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 	}
 
 	// generate the machine config for all following phases
-	opts := &GenerateMachineConfigOptions{
-		WithoutRTLLabel:                !r.FeatureFlags.EnableRTLNodeLabel,
-		WithoutCrossNamespacePatchRefs: !r.FeatureFlags.EnableCrossNamespacePatchRefs,
-	}
+	opts := NewGenerateMachineConfigOptions(r.FeatureFlags)
 	machineCfg, _, err := GenerateMachineConfig(ctx, r.Client, node, opts)
 	if err != nil {
 		err = r.updateOpStatus(

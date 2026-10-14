@@ -13,6 +13,7 @@ import (
 	"time"
 
 	talosv1alpha1 "github.com/RTLDeutschland/talos-operator/api/v1alpha1"
+	iapi "github.com/RTLDeutschland/talos-operator/internal/api"
 	"github.com/samber/lo"
 	"github.com/siderolabs/talos/pkg/machinery/config"
 	"github.com/siderolabs/talos/pkg/machinery/config/configpatcher"
@@ -176,6 +177,15 @@ type GenerateMachineConfigOptions struct {
 	WithoutSecrets                 bool // if set, secrets will be omitted from the generated machine config
 	WithoutRTLLabel                bool // whether or not to omit rtl.de/cluster-name node annotation patch
 	WithoutCrossNamespacePatchRefs bool // whether or not to allow patch refs with an explicit namespace
+}
+
+// NewGenerateMachineConfigOptions creates a new (default) GenerateMachineConfigOptions struct
+// based on given feature flags.
+func NewGenerateMachineConfigOptions(featureFlags iapi.FeatureFlags) *GenerateMachineConfigOptions {
+	return &GenerateMachineConfigOptions{
+		WithoutRTLLabel:                !featureFlags.EnableRTLNodeLabel,
+		WithoutCrossNamespacePatchRefs: !featureFlags.EnableCrossNamespacePatchRefs,
+	}
 }
 
 // demoSecretsBundle is here to avoid generating fresh secrets only for them to be thrown away

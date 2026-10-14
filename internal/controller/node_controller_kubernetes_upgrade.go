@@ -401,13 +401,13 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 		switch opStatus.KubernetesComponentUpgrade.ComponentName {
 		case KubernetesComponentAPIServer:
 			targetImage = machineCfg.K8sAPIServerConfig().Image()
-			podName = "kube-apiserver-" + node.Name
+			podName = "kube-apiserver-" + node.GetShortName()
 		case KubernetesComponentControllerManager:
 			targetImage = machineCfg.K8sControllerManagerConfig().Image()
-			podName = "kube-controller-manager-" + node.Name
+			podName = "kube-controller-manager-" + node.GetShortName()
 		case KubernetesComponentScheduler:
 			targetImage = machineCfg.K8sSchedulerConfig().Image()
-			podName = "kube-scheduler-" + node.Name
+			podName = "kube-scheduler-" + node.GetShortName()
 		case KubernetesComponentKubelet:
 			targetImage = machineCfg.K8sKubeletConfig().Image()
 		default:
@@ -529,9 +529,15 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 		}
 
 		// wait for the Node to be Ready in Kubernetes
-		k8sNode, err := remoteClient.CoreV1().Nodes().Get(ctx, node.Name, metav1.GetOptions{})
+		k8sNode, err := remoteClient.CoreV1().
+			Nodes().
+			Get(ctx, node.GetShortName(), metav1.GetOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("failed to get node %s for verification: %w", node.Name, err)
+			return nil, fmt.Errorf(
+				"failed to get node %s for verification: %w",
+				node.GetShortName(),
+				err,
+			)
 		}
 		ready := false
 		for _, cond := range k8sNode.Status.Conditions {

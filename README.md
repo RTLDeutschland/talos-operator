@@ -25,14 +25,92 @@ All of the config patching knobs and dials `talosctl gen config` provides, and m
 - `<cluster endpoint>`: `https://${Cluster.metadata.name}.${Cluster.spec.domain}:6443`
   - with an escape hatch: [./api/v1alpha1/constants/node_annotation.go](./api/v1alpha1/constants/node_annotation.go)
 
-### Maintenance windows
+### Automatic reconciliation / "Maintenance windows"
 
-Automated cluster node reconciliation inside a maintenance window defined by a cron expression: config application, Kubernetes upgrades, OS upgrades.
+Automated reconciliation is enabled through maintenance windows defined by a cron expression.
+
+```yaml
+apiVersion: talos.rtl.de/v1alpha1
+kind: Cluster
+metadata:
+  name: athena
+spec:
+  domain: internal # cluster FQDN -> athena.internal
+  kubernetesVersion: v1.36.4
+  talosVersionContract: v1.14
+  options:
+    maintenanceWindow:
+      enabled: true
+      cron: "17 4 * * 2" # every Tuesday at 04:17 AM
+      #cron: "0 * * * *" # permanent automatic reconciliation
+    # ...
+  # patches: []
+  # patchRefs: []
+  # controlPlanePatches: []
+  # controlPlanePatchRefs: []
+  # workerPatches: []
+  # workerPatchRefs: []
+```
+
+The order of operations is similar to that of Kubernetes upgrades:
+
+- control planes (sorted alphabetically)
+- workers (sorted alphabetically)
+
+The operator knows what to do because it collects information on Node objects attached to this Cluster, such as:
+
+```yaml
+apiVersion: talos.rtl.de/v1alpha1
+kind: Node
+metadata:
+  name: athena-c1 # -> athena-c1.internal (cluster domain)
+spec:
+  clusterRef: athena
+  role: controlplane
+  # patches: []
+  # patchRefs: []
+status:
+  effectiveConfig: "" # the config that will be applied in the next Apply operation
+  conditions:
+    - lastTransitionTime: "2026-10-01T14:52:19Z" # -> node is ready (config has been successfully encoded)
+      message: Node is reachable
+      reason: NodeReachable
+      status: "True"
+      type: Ready
+    - lastTransitionTime: "2026-09-02T08:14:50Z" # -> node has successfully applied the Talos config in maintenance mode
+      message: Successfully applied Talos config to node in maintenance mode
+      reason: SuccessfulApply
+      status: "True"
+      type: Provisioned
+    - lastTransitionTime: "2026-10-13T10:22:47Z" # -> node does not require any configuration changes
+      message: Node configuration is in sync
+      reason: ConfigInSync
+      status: "True"
+      type: ConfigInSync
+    - lastTransitionTime: "2026-09-08T11:58:53Z" # -> no kubernetes components require updates
+      message: Kubernetes components are up to date
+      reason: ClusterNodesKubernetesUpToDate
+      status: "True"
+      type: KubernetesInSync
+```
+
+Note `ConfigInSync` and `KubernetesInSync`. These conditions are summed together by the Cluster reconciler and reflected on the Cluster level,
+and these conditions are what the maintenance window logic uses to determine whether or not to kick off a RollingApply or a KubernetesUpgrade.
+
+Upgrading Talos and Kubernetes simultaneously is safe because RollingApply runs first, and upgrades the nodes first to a version that would
+then support the subsequent Kubernetes upgrade.
+
+#### Manual reconciliation as a default
+
+As shown above, changes to Node and Cluster objects do not reconcile automatically. This allows you to stage configuration changes for opportune times.
 
 ### kubectl-talos
 
 A `kubectl-talos` kubectl plugin to interact with operator-managed clusters almost as transparently as you would an unmanaged cluster, e.g:
 
+- triggering a Node Apply: `kubectl talos apply athena-c1`
+- triggering a Cluster RollingApply: `kubectl talos rolling-apply athena`
+- triggering a Cluster KubernetesUpgrade: `kubectl talos k8s-upgrade athena`
 - talosctl: `kubectl talos talosctl athena -- -n athena-c1.internal get machinestatus`
 - kubectl: `kubectl talos kubectl athena -- kubectl get nodes -o wide`
 - other supported tools: `kubectl talos kubectl athena -- {k9s, cilium, helm}`

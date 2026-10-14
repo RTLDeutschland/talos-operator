@@ -79,7 +79,7 @@ func resetNodeCmd() *cobra.Command {
 			resetOptions["systemLabelsToWipe"] = systemLabelsToWipe
 		}
 		if len(userDisksToWipe) > 0 {
-			resetOptions["userLabelsToWipe"] = userDisksToWipe
+			resetOptions["userDisksToWipe"] = userDisksToWipe
 		}
 		if cmd.Flags().Changed("reboot") {
 			resetOptions["reboot"] = reboot

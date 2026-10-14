@@ -151,7 +151,7 @@ spec:
                     items:
                       type: string
                     type: array
-                  userLabelsToWipe:
+                  userDisksToWipe:
                     description: |-
                       UserDisksToWipe is a list of specific user disks to wipe during the reset operation.
                       If empty, all user disks will be wiped, assuming the mode includes user-disks.
@@ -404,7 +404,7 @@ spec:
                         items:
                           type: string
                         type: array
-                      userLabelsToWipe:
+                      userDisksToWipe:
                         description: |-
                           UserDisksToWipe is a list of specific user disks to wipe during the reset operation.
                           If empty, all user disks will be wiped, assuming the mode includes user-disks.

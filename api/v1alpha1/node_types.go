@@ -169,7 +169,7 @@ type ResetOperationOptions struct {
 	// UserDisksToWipe is a list of specific user disks to wipe during the reset operation.
 	// If empty, all user disks will be wiped, assuming the mode includes user-disks.
 	// +optional
-	UserDisksToWipe []string `json:"userLabelsToWipe,omitempty"`
+	UserDisksToWipe []string `json:"userDisksToWipe,omitempty"`
 }
 
 // KubernetesComponentUpgradeOptions contains arguments for the KubernetesComponentUpgrade operation.

@@ -79,7 +79,10 @@ func provisionNodeCmd() *cobra.Command {
 		}
 
 		if *watch {
-			watchResource(cmd.Context(), "nodes.talos.rtl.de", *namespace, nodeName)
+			err := watchResource(cmd.Context(), "nodes.talos.rtl.de", *namespace, nodeName)
+			if err != nil {
+				return fmt.Errorf("error watching operation: %w", err)
+			}
 		}
 
 		return nil

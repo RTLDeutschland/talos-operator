@@ -130,7 +130,7 @@ func watchResource(ctx context.Context, resourceType, namespace, name string) er
 				lineColor = "red"
 				lineText += "\n"
 				renderSpinnerLine(lineText, lineColor)
-				return nil
+				return fmt.Errorf("operation %s failed: %s", op.Type, op.Message)
 			}
 
 			renderSpinnerLine(lineText, lineColor)
@@ -160,7 +160,7 @@ func watchResource(ctx context.Context, resourceType, namespace, name string) er
 				lineColor = "red"
 				lineText += "\n"
 				renderSpinnerLine(lineText, lineColor)
-				return nil
+				return fmt.Errorf("operation %s failed: %s", op.Type, op.Message)
 			}
 
 			renderSpinnerLine(lineText, lineColor)

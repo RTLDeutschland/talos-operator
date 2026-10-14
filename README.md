@@ -35,7 +35,7 @@ kind: Cluster
 metadata:
   name: athena
 spec:
-  domain: internal # cluster FQDN -> athena.internal
+  domain: internal # cluster external FQDN suffix -> athena.internal
   kubernetesVersion: v1.36.4
   talosVersionContract: v1.14
   options:
@@ -63,7 +63,7 @@ The operator knows what to do because it collects information on Node objects at
 apiVersion: talos.rtl.de/v1alpha1
 kind: Node
 metadata:
-  name: athena-c1 # -> athena-c1.internal (cluster domain)
+  name: athena-c1 # node hostname + cluster-sourced FQDN suffix -> athena-c1.internal
 spec:
   clusterRef: athena
   role: controlplane

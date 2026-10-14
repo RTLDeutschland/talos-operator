@@ -330,6 +330,9 @@ func (r *NodeReconciler) hasNodeRebootedYet(
 ) bool {
 	// compare boot ID
 	currentBootID, err := getNodeBootID(tCtx, talosClient)
+	if err != nil {
+		return false
+	}
 	if currentBootID == node.Status.BootID {
 		return false
 	}

@@ -397,29 +397,6 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return *res, nil
 	}
 
-	// check if node needs initial updates and start an Apply for them
-	if false {
-		log.Info().Msg("Node needs initial OS update, starting Apply operation")
-		err := r.updateNodeStatus(ctx, func(n *talosv1alpha1.Node) {
-			n.Status.Operation = &talosv1alpha1.NodeOperationStatus{
-				NodeOperation: talosv1alpha1.NodeOperation{
-					Type: NodeOperationTypeApply,
-				},
-				Phase:              NodeOperationPhasePending,
-				Reason:             NodeOperationReasonUpgradeRequired,
-				Message:            "Node needs initial OS update, starting Apply operation",
-				LastTransitionTime: metav1.Now(),
-			}
-		})
-		if err != nil {
-			return ctrl.Result{}, fmt.Errorf(
-				"failed to update Node Operation status for initial OS update: %w",
-				err,
-			)
-		}
-		return ctrl.Result{RequeueAfter: 1 * time.Second}, nil
-	}
-
 	if r.isOperationComplete(node) {
 		// operation is done, exit early
 		log.Trace().Msg("No ongoing operation, requeueing at default polling interval")

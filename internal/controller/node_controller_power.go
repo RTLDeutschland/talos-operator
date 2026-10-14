@@ -138,7 +138,7 @@ func (r *NodeReconciler) handleNodePower(
 			phase = NodeOperationPhaseVerifying
 			reason = NodeOperationReasonRebootRequested
 		}
-		if phase == EventReasonCompleted {
+		if opStatus.Type == NodeOperationTypeShutdown {
 			r.Recorder.Eventf(
 				node,
 				nil,
@@ -147,7 +147,6 @@ func (r *NodeReconciler) handleNodePower(
 				EventActionPowerOperation,
 				"Node shutdown complete",
 			)
-			return nil, nil
 		}
 		err = r.updateOpStatus(
 			ctx,

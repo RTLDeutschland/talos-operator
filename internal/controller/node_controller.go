@@ -413,6 +413,19 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		res, err = r.handleNodePower(ctx, node, cluster)
 	case NodeOperationTypeReset:
 		res, err = r.handleNodeReset(ctx, node, cluster)
+	default:
+		err = r.updateOpStatus(
+			ctx,
+			NodeOperationPhaseFailed,
+			NodeOperationReasonProgramError,
+			fmt.Sprintf("Unknown operation type %q", node.Status.Operation.Type),
+		)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf(
+				"failed to update Node Operation status for unknown operation type: %w",
+				err,
+			)
+		}
 	}
 	log = log.With().
 		Str("operation.type", node.Status.Operation.Type).

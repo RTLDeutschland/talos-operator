@@ -111,7 +111,8 @@ A `kubectl-talos` kubectl plugin to interact with operator-managed clusters almo
 - triggering a Node Apply: `kubectl talos apply athena-c1`
 - triggering a Cluster RollingApply: `kubectl talos rolling-apply athena`
 - triggering a Cluster KubernetesUpgrade: `kubectl talos k8s-upgrade athena`
-- talosctl: `kubectl talos talosctl athena -- -n athena-c1.internal get machinestatus`
+- talos dashboard: `kubectl talos dashboard athena-c1`
+- talosctl: `kubectl talos talosctl athena-c1 -- get machinestatus`
 - kubectl: `kubectl talos kubectl athena -- kubectl get nodes -o wide`
 - other supported tools: `kubectl talos kubectl athena -- {k9s, cilium, helm}`
 

@@ -5,7 +5,9 @@ package controller
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 	"time"
@@ -744,7 +746,7 @@ func EncodeMachineConfig(cfg config.Provider, pretty bool) ([]byte, error) {
 		doc := &yaml.Node{}
 		err := dec.Decode(doc)
 		if err != nil {
-			if err.Error() == "EOF" {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			return nil, fmt.Errorf("failed to decode final config into YAML documents: %w", err)

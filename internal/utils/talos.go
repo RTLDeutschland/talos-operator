@@ -57,6 +57,9 @@ type Extensions struct {
 
 // GetSchematicID returns the schematic ID from the extensions, if present.
 func (e *Extensions) GetSchematicID() string {
+	if len(e.Layers) == 0 {
+		return ""
+	}
 	lastLayer := e.Layers[len(e.Layers)-1]
 	if lastLayer.Metadata.Name != "schematic" {
 		return ""

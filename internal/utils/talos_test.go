@@ -226,6 +226,11 @@ func TestGetSchematicID(t *testing.T) {
 			},
 			want: "",
 		},
+		{
+			name:       "no layers",
+			extensions: &Extensions{},
+			want:       "",
+		},
 	}
 
 	for _, tt := range tests {

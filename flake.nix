@@ -6,6 +6,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nix2container.url = "github:nlewo/nix2container";
+    nix2container.inputs.nixpkgs.follows = "nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -174,7 +175,9 @@
           name = "task-push-image";
           text = ''
             # $1: repository URL
-            ${lib.getExe self.packages.${system}.operator-container.copyTo} "docker://''${1}:${self.packages.${system}.operator-container.imageTag}"
+            name="''${1:-${self.packages.${system}.operator-container.imageName}}" # $1 or default
+            tag="${self.packages.${system}.operator-container.imageTag}"
+            ${lib.getExe self.packages.${system}.operator-container.copyTo} "docker://''${name}:''${tag}"
           '';
         };
         task-push-image-cross = pkgs.writeShellApplication {
@@ -183,10 +186,11 @@
           text = ''
             # $1: repository URL
             out="${self.packages.${system}.operator-container-multiarch}"
+            name="''${1:-${self.packages.${system}.operator-container.imageName}}" # $1 or default
             tag="${self.packages.${system}.operator-container.imageTag}"
 
             # push the bundle to repo
-            skopeo copy --all "oci://''${out}:''${tag}" "docker://''${1}:''${tag}"
+            skopeo copy --all "oci://''${out}:''${tag}" "docker://''${name}:''${tag}"
 
             # output the final digest
             nu -c "open $out/index.json | get manifests | last | get digest | print"

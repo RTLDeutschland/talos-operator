@@ -152,7 +152,7 @@
 
         operator-container-multiarch =
           pkgs.runCommandWith {
-            name = "operator-container-multiarch";
+            name = "talos-operator-container-multiarch";
             derivationArgs.nativeBuildInputs = with pkgs; [regclient];
           } ''
             mkdir -p tmp
@@ -170,6 +170,18 @@
               --annotation "org.opencontainers.image.source=https://github.com/RTLDeutschland/talos-operator" \
               --annotation "org.opencontainers.image.licenses=MIT" \
               --annotation "org.opencontainers.image.version=${version}"
+          '';
+
+        helmChart =
+          pkgs.runCommandWith {
+            name = "talos-operator-chart";
+            derivationArgs = {
+              nativeBuildInputs = with pkgs; [kubernetes-helm];
+              src = ./helm;
+            };
+          } ''
+            mkdir -p $out
+            helm package $src --version "${version}" --app-version "v${version}" --destination $out
           '';
 
         # CI scripts to build & push images, **without** Docker daemon
@@ -196,6 +208,18 @@
 
             # output the final digest
             nu -c "open $out/index.json | get manifests | last | get digest | print"
+          '';
+        };
+
+        # CI script to push Helm chart
+        task-push-helm = pkgs.writeShellApplication {
+          name = "task-push-helm";
+          runtimeInputs = with pkgs; [gnugrep kubernetes-helm];
+          text = ''
+            # $1: repository URL
+            chart="$(echo "${self.packages.${system}.helmChart}"/*.tgz)"
+            repo="''${1:-${self.packages.${system}.operator-container.imageName}}/helm"
+            helm push "$chart" "oci://$repo"
           '';
         };
 

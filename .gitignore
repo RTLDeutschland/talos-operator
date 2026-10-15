@@ -11,6 +11,9 @@ Dockerfile.cross
 result
 dist/
 
+# helm package
+*.tgz
+
 # Test binary, built with `go test -c`
 *.test
 

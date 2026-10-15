@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - ⚠️ **Breaking change**: Talos version contract heuristics **have been removed**.
   - Define these in your cluster resources: `cluster.spec.talosVersionContract: v1.14` (adjust for your own Talos versions)
+  - Please note that `v1.14` comes with [many large configuration schema changes](https://docs.siderolabs.com/talos/v1.14/getting-started/what's-new-in-talos).
+  - **If you're an existing user**, it is recommended that you set this to your *current* Talos version (i.e. `v1.13`) and only adjust from there with maintenance mode disabled, and review `node.status.effectiveConfig` on all nodes before initiating any Apply operations.
 - ⚠️ **Breaking change**: `userLabelsToWipe` in the Node Reset operation has been renamed to `userDisksToWipe`, fixing a typo.
 - **Added** initial support for Talos v1.14.
 

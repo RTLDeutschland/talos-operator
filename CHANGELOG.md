@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v0.15.0 - TBD
+## v1.0.0 - TBD
 
 - ⚠️ **Breaking change**: Talos version contract heuristics **have been removed**.
   - Define these in your cluster resources: `cluster.spec.talosVersionContract: v1.14` (adjust for your own Talos versions)

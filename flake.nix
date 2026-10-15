@@ -58,10 +58,12 @@
         # build tools
         go
         golines
+        golangci-lint
         kubernetes-controller-tools
         kubebuilder
 
         # test tools
+        kustomize
         k3d
         opentofu
 

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -625,9 +626,14 @@ func GenerateMachineConfig(
 	// (because we're v1.14+ and KubeAPIServerConfig was $patch: delete'd)
 	if node.Spec.Role == Controlplane && v1a1Cfg != nil && v1a1Cfg.ClusterConfig != nil &&
 		v1a1Cfg.ClusterConfig.APIServerConfig != nil && // nolint:staticcheck // supporting deprecated configuration
-		len(
+		(len(
 			v1a1Cfg.ClusterConfig.APIServerConfig.ExtraCertSANs, // nolint:staticcheck // supporting deprecated configuration
-		) == 0 {
+		) == 0 || v1a1Cfg.ClusterConfig.APIServerConfig.ExtraCertSANs != nil && // nolint:staticcheck // supporting deprecated configuration
+			!slices.Contains(
+				v1a1Cfg.ClusterConfig.APIServerConfig.ExtraCertSANs, // nolint:staticcheck // supporting deprecated configuration
+				clusterFQDN,
+			)) {
+		// translation: if clusterSANs is empty or does not contain the cluster FQDN
 		patchData := KV{
 			"version": "v1alpha1",
 			"cluster": KV{
@@ -649,7 +655,7 @@ func GenerateMachineConfig(
 		patchHierarchy = append(patchHierarchy, talosv1alpha1.PatchHierarchyElement{
 			Source:               "operator:api-server-extra-cert-sans",
 			Synthetic:            true,
-			SyntheticExplanation: "a patch fixing empty SANs in the legacy API server configuration",
+			SyntheticExplanation: "a patch fixing missing cluster SAN in the legacy API server configuration",
 		})
 	}
 

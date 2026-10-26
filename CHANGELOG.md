@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.0.1 - TBD
 
 - **Removed** `certSANs` logic for legacy API server configuration, because Talos does the same internally.
+- **Updated** build-time dependencies because of the eMudhra CA breach.
 
 ## v1.0.0 - 2026-10-15
 

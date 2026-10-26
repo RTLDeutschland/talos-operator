@@ -46,7 +46,6 @@
       devPackages = with pkgs; [
         # misc dev tools
         just
-        buildah
         talosctl
 
         # fix semantic-release on arm64 by using an older Python

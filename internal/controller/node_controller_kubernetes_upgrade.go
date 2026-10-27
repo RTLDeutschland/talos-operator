@@ -11,6 +11,7 @@ import (
 	"github.com/RTLDeutschland/talos-operator/internal/logz"
 	"github.com/siderolabs/talos/pkg/machinery/api/machine"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -70,6 +71,10 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 	)
 	if err == nil && driver != nil {
 		hasLonghorn = true
+	} else if apierrors.IsNotFound(err) {
+		hasLonghorn = false
+	} else if err != nil {
+		return nil, fmt.Errorf("error checking for Longhorn CSI driver: %w", err)
 	}
 
 	// generate the machine config for all following phases

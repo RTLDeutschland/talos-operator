@@ -74,8 +74,26 @@ doc:
     mdbook serve docs/mdbook
 
 # Bumps the version strings everywhere relevant to the given string.
+[group('release')]
 bump-version VERSION:
     echo "{{ VERSION }}" | grep --quiet --invert-match -E '^v' || { echo "usage error: version should not start with 'v'"; exit 1; }
     echo "{{ VERSION }}" > VERSION
     yq -i ".appVersion = \"v{{ VERSION }}\"" helm/Chart.yaml
     yq -i ".version = \"{{ VERSION }}\"" helm/Chart.yaml
+
+# Build and push release artifacts.
+[group('release')]
+build-push-release:
+    # build kubectl-talos
+    mkdir -p dist
+    nix build -o dist/kubectl-talos .#kubectl-talos-crosscompile
+    (cd dist/kubectl-talos/bin && sha256sum * ) > dist/SHA256SUMS
+    gh release upload -R github.com/RTLDeutschland/talos-operator "v$(cat VERSION)" dist/kubectl-talos/bin/* || true
+
+    # build main image & chart
+    nix run .#task-push-image-cross
+    nix run .#task-push-helm
+
+    # build alternative image & chart
+    nix run .#task-push-image-cross -- git.sapphiccode.net/sapphiccode/talos-operator
+    nix run .#task-push-helm -- git.sapphiccode.net/sapphiccode/talos-operator

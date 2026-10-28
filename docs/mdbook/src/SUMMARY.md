@@ -11,7 +11,6 @@
   - [Cluster Resource](./4-cluster_resource.md)
     - [Kubeconfig and Talosconfig](./4.1-cluster_secrets.md)
     - [Rolling reboots](./4.2-rolling_reboot.md)
-    - [Rolling configuration apply](./4.3-rolling_apply.md)
     - [Kubernetes upgrades](./4.4-kubernetes_upgrades.md)
     - [Unattended configuration and Kubernetes upgrades](./4.5-automated_upgrades.md)
   - [Kubectl plugin](./5.1-kubectl_plugin.md)

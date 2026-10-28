@@ -2,7 +2,7 @@
 
 ## Operations
 
-The Talos Operator is intended to replace most things you would do with `talosctl`:
+The Talos operator is intended to replace most things you would do with `talosctl`:
 
 | Talos Command | Equivalent Node Operation | Equivalent Cluster Operation |
 | --- | --- | --- |
@@ -13,7 +13,30 @@ The Talos Operator is intended to replace most things you would do with `talosct
 | `talosctl reset` | `Node.Reset` | N/A |
 | `talosctl k8s-upgrade` | `Node.KubernetesComponentUpgrade` | `Cluster.KubernetesUpgrade` |
 
-It takes ownership of the lifecycle of the resulting resources. Once a Node is provisioned, the Talos Operator will continuously monitor it and update its status in the cluster.
+It takes ownership of the lifecycle of the resulting resources. Once a Node is provisioned, the Talos operator will continuously monitor it and update its status in the cluster.
+
+### Starting operations
+
+Because the Talos operator is architected in a way that does not immediately apply changes to the manifest to the cluster and its nodes, there exists an `operation` key to tell the it to start processing.[^1]
+
+[^1]: Except in cases of maintenanceWindow, see [Unattended configuration and Kubernetes upgrades](./4.5-automated_upgrades.md).
+
+Both Node and Cluster resources support an `operation` key. This key is normally empty and omitted from any YAML output, but it can be set in a few different ways:
+
+- supplying it with the resource manifest (not recommended)
+- using raw `kubectl`: `kubectl patch nodes.talos.rtl.de NODE_NAME --type=merge -p '{"operation":{"type":"Apply"}}'`
+- or using the [kubectl-talos plugin](./5.1-kubectl_plugin.md): `kubectl talos apply NODE`
+
+When setting this key, the operator detects this and:
+
+1. copies its contents into `status.operationStatus`
+2. sets `phase` to `Pending` and updates the `lastTransitionTime` to the current time
+2. sets `operation` back to empty / null, removing it from the manifest
+
+It will then internally begin processing the operation according to its type, updating the phase as the operation progresses.
+This means the operator can be restarted at any point without losing track of what it was doing.
+
+The `phase` lifecycle depends on the operation type, but generally follows a pattern of `Pending` to various in-progress states to `Done` or `Failed`.
 
 ## Patching
 

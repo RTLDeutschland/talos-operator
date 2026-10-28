@@ -318,13 +318,21 @@ func kubectlApply(ctx context.Context, data KV) error {
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
+	defer file.Close()
 	defer os.Remove(file.Name())
 
 	// serialize data to YAML and write to file
-	if err := yaml.NewEncoder(file).Encode(data); err != nil {
-		return fmt.Errorf("failed to write YAML to temp file: %w", err)
+	enc := yaml.NewEncoder(file)
+	defer enc.Close()
+	if err := enc.Encode(data); err != nil {
+		return fmt.Errorf("failed to encode YAML to temp file: %w", err)
 	}
-	file.Close()
+	if err := enc.Close(); err != nil {
+		return fmt.Errorf("failed to close YAML encoder: %w", err)
+	}
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
 
 	// send it:
 	args := []string{"apply", "-f", file.Name()}

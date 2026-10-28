@@ -80,6 +80,7 @@ bump-version VERSION:
     echo "{{ VERSION }}" > VERSION
     yq -i ".appVersion = \"v{{ VERSION }}\"" helm/Chart.yaml
     yq -i ".version = \"{{ VERSION }}\"" helm/Chart.yaml
+    sed -i "s/^  --version .*/  --version {{ VERSION }} \\\\/" docs/mdbook/src/2-installation.md
 
 # Build and push release artifacts.
 [group('release')]

@@ -17,9 +17,10 @@ Dissecting this resource, you can see several important fields:
 - `status.kubernetesVersions`: the versions of Kubernetes components currently running on the node
 - `status.operationStatus`: the last operation performed on the node, and its status
   - This one is particularly important, as it shows you exactly what the operator is currently doing with the node, or did most recently.
+- `status.patchHierarchy`: an explanation of all patches applied to the base configuration of this Node, and where they came from.
 
 > [!NOTE]
-> Secrets are intentionally omitted from `status.effectiveConfig` for security reasons. The applied configuration will still contain the secrets when sent to the node.
+> Secrets are intentionally redacted from `status.effectiveConfig` for security reasons. The applied configuration will still contain the secrets when sent to the node.
 
 ### `status.conditions`
 

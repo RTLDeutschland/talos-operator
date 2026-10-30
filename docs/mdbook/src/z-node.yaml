@@ -3,218 +3,296 @@ kind: Node
 metadata:
   # annotations:
   #   kubectl.kubernetes.io/last-applied-configuration: |
-  #     {"apiVersion":"talos.rtl.de/v1alpha1","kind":"Node","metadata":{"annotations":{},"name":"athena-c1","namespace":"demo-talos-operator"},"spec":{"clusterRef":"athena","patches":["version: v1alpha1\nmachine:\n  network:\n    interfaces:\n      - interface: eth0\n        addresses:\n          - 10.256.3.38/24\n"],"role":"controlplane"}}
-  # creationTimestamp: "2025-12-15T13:55:18Z"
-  # generation: 16
+  #     {"apiVersion":"talos.rtl.de/v1alpha1","kind":"Node","metadata":{"annotations":{},"name":"athena-c1","namespace":"sapphiccode-talos"},"spec":{"clusterRef":"athena","role":"controlplane"}}
+  creationTimestamp: "2026-10-29T15:39:25Z"
+  finalizers:
+  - talos.rtl.de/finalizer
+  # generation: 9
   name: athena-c1
-  namespace: demo-talos-operator
-  # resourceVersion: "54958828"
-  # uid: 69fba2d4-c6fd-487c-a653-8585f09df619
+  namespace: sapphiccode-talos
+  # resourceVersion: "68797"
+  # uid: 9417bdd0-6800-4547-bd5e-1cea06ac6dcd
 spec:
   clusterRef: athena
-  patches:
-    - |
-      version: v1alpha1
-      machine:
-        network:
-          interfaces:
-            - interface: eth0
-              addresses:
-                - 10.256.3.38/24
   role: controlplane
 status:
-  appliedConfigHash: c60b6364e9eabdf9d1d5360585991a00e349960f4a3283a05c39fac434a62057
-  bootID: |
-    506f6649-4f1c-4c0b-a8b3-3660e6c95cfc
+  # appliedConfigHash: a5fac14e19f239a53a9eadae109c09b020f0db21b7b446ee5e9ff942ccccd8b3
+  # bootID: c80b01a9-85c2-4f26-9a3f-471e94f2fab8
   conditions:
-    - lastTransitionTime: "2025-12-18T15:01:02Z"
-      message: Node is reachable
-      reason: NodeReachable
-      status: "True"
-      type: Ready
-    - lastTransitionTime: "2025-12-15T13:57:29Z"
-      message: Provisioning operation was skipped as per request
-      reason: ProvisioningSkipped
-      status: "True"
-      type: Provisioned
-    - lastTransitionTime: "2025-12-18T15:06:12Z"
-      message: Node configuration is in sync
-      reason: ConfigInSync
-      status: "True"
-      type: ConfigInSync
-    - lastTransitionTime: "2025-12-16T12:01:06Z"
-      message: Kubernetes components are up to date
-      reason: KubernetesUpToDate
-      status: "False"
-      type: KubernetesNeedsUpgrade
-    - lastTransitionTime: "2025-12-18T15:06:33Z"
-      message: Kubernetes node is ready
-      reason: KubernetesNodeReady
-      status: "True"
-      type: KubernetesReady
-    - lastTransitionTime: "2025-12-18T10:50:37Z"
-      message: Kubernetes components are up to date
-      reason: KubernetesUpToDate
-      status: "False"
-      type: KubernetesNeedsUpdates
+  - lastTransitionTime: "2026-10-29T16:00:47Z"
+    message: Node is reachable
+    reason: NodeReachable
+    status: "True"
+    type: Ready
+  - lastTransitionTime: "2026-10-29T16:00:46Z"
+    message: Successfully applied Talos config to node in maintenance mode
+    reason: SuccessfulApply
+    status: "True"
+    type: Provisioned
+  - lastTransitionTime: "2026-10-29T16:00:47Z"
+    message: Node configuration is in sync
+    reason: ConfigInSync
+    status: "True"
+    type: ConfigInSync
+  - lastTransitionTime: "2026-10-29T16:00:47Z"
+    message: Kubernetes components are up to date
+    reason: ClusterNodesKubernetesUpToDate
+    status: "True"
+    type: KubernetesInSync
+  - lastTransitionTime: "2026-10-29T16:08:38Z"
+    message: Kubernetes node is ready
+    reason: KubernetesNodeReady
+    status: "True"
+    type: KubernetesReady
+  - lastTransitionTime: "2026-10-29T16:07:38Z"
+    message: Kubernetes node is schedulable
+    reason: KubernetesNodeSchedulable
+    status: "False"
+    type: KubernetesUnschedulable
   effectiveConfig: |
     version: v1alpha1
     debug: false
     persist: true
     machine:
       type: controlplane
-      token: ""
+      token: <redacted>
+      ca:
+        crt: <redacted>
+        key: <redacted>
       certSANs:
-        - athena.acme.internal
-      kubelet:
-        image: ghcr.io/siderolabs/kubelet:v1.34.3
-        extraConfig:
-          imageMaximumGCAge: 48h
-      network:
-        hostname: athena-c1.acme.internal
-        interfaces:
-          - interface: eth0
-            addresses:
-              - 10.256.3.38/24
-            routes:
-              - network: 0.0.0.0/0
-                gateway: 10.256.3.1
-            vip:
-              ip: 10.256.3.37
-        nameservers:
-          - 10.98.192.100
-          - 10.98.224.110
-        searchDomains:
-          - acme.internal
-      install:
-        disk: /dev/sda
-        image: factory.talos.dev/vmware-installer/7bc843886ddac143fae1c3eddfe74664782e0aa50fdce9531070b20be5fc82ae:v1.11.5
-        wipe: false
-      files:
-        - content: |
-            apiVersion: v1
-            kind: Config
-            clusters:
-            - name: Default
-              cluster:
-                insecure-skip-tls-verify: true
-                server: http://127.0.0.1:6440/v1/authenticate
-            users:
-            - name: Default
-              user:
-                insecure-skip-tls-verify: true
-            current-context: webhook
-            contexts:
-            - name: webhook
-              context:
-                user: Default
-                cluster: Default
-          permissions: 0o644
-          path: /var/lib/kubernetes/kube-api-authn-webhook.yaml
-          op: create
-      time:
-        servers:
-          - ntp1.acme.internal
-          - ntp2.acme.internal
-          - ntp3.acme.internal
-      registries:
-        mirrors:
-          docker.io:
-            endpoints:
-              - https://registry.acme.internal/v2/docker
-            overridePath: true
-          gcr.io:
-            endpoints:
-              - https://registry.acme.internal/v2/gcr
-            overridePath: true
-          quay.io:
-            endpoints:
-              - https://registry.acme.internal/v2/quay
-            overridePath: true
-          registry.gitlab.com:
-            endpoints:
-              - https://registry.acme.internal/v2/gitlab
-            overridePath: true
-          registry.k8s.io:
-            endpoints:
-              - https://registry.acme.internal/v2/k8s
-            overridePath: true
+        - athena.p1.internal
       features:
-        rbac: true
-        stableHostname: true
-        apidCheckExtKeyUsage: true
         diskQuotaSupport: true
-        kubePrism:
-          enabled: true
-          port: 7445
-        hostDNS:
-          enabled: true
-          forwardKubeDNSToHost: true
-      nodeLabels:
-        rtl.de/cluster-name: athena
     cluster:
-      controlPlane:
-        endpoint: https://athena.acme.internal:6443
-      clusterName: athena
-      network:
-        cni:
-          name: none
-        dnsDomain: cluster.local
-        podSubnets:
-          - 10.244.0.0/16
-        serviceSubnets:
-          - 10.245.0.0/16
-      apiServer:
-        image: registry.k8s.io/kube-apiserver:v1.34.3
-        extraArgs:
-          authentication-token-webhook-config-file: /run/kube-api-authn-webhook.yaml
-        extraVolumes:
-          - hostPath: /var/lib/kubernetes/kube-api-authn-webhook.yaml
-            mountPath: /run/kube-api-authn-webhook.yaml
-            readonly: true
-        certSANs:
-          - athena.acme.internal
-        disablePodSecurityPolicy: true
-        admissionControl:
-          - name: PodSecurity
-            configuration:
-              apiVersion: pod-security.admission.config.k8s.io/v1alpha1
-              defaults:
-                audit: privileged
-                audit-version: latest
-                enforce: privileged
-                enforce-version: latest
-                warn: privileged
-                warn-version: latest
-              exemptions:
-                namespaces: []
-                runtimeClasses: []
-                usernames: []
-              kind: PodSecurityConfiguration
-        auditPolicy:
-          apiVersion: audit.k8s.io/v1
-          kind: Policy
-          rules:
-            - level: Metadata
-      controllerManager:
-        image: registry.k8s.io/kube-controller-manager:v1.34.3
-      proxy:
-        disabled: true
-      scheduler:
-        image: registry.k8s.io/kube-scheduler:v1.34.3
-      externalCloudProvider:
-        enabled: false
-      allowSchedulingOnControlPlanes: true
+      token: <redacted>
+      etcd:
+        ca:
+          crt: <redacted>
+          key: <redacted>
+    ---
+    apiVersion: v1alpha1
+    kind: DiscoveryServiceConfig
+    name: default
+    endpoint: https://discovery.talos.dev/
+    ---
+    apiVersion: v1alpha1
+    kind: DiscoveryIdentityConfig
+    clusterID: <redacted>
+    clusterSecret: <redacted>
+    ---
+    apiVersion: v1alpha1
+    kind: ResolverConfig
+    hostDNS:
+      enabled: true
+      forwardKubeDNSToHost: true
+    ---
+    apiVersion: v1alpha1
+    kind: VolumeConfig
+    name: EPHEMERAL
+    mount:
+      secure: true
+    ---
+    apiVersion: v1alpha1
+    kind: FilesystemTrimConfig
+    interval: 168h0m0s
+    ---
+    apiVersion: v1alpha1
+    kind: SecurityProfileConfig
+    workloadIsolation: true
+    ---
+    apiVersion: v1alpha1
+    kind: HostnameConfig
+    auto: 'off'
+    hostname: athena-c1.p1.internal
+    ---
+    apiVersion: v1alpha1
+    kind: KubeClusterConfig
+    clusterName: athena
+    endpoint: https://athena.p1.internal:6443
+    ---
+    apiVersion: v1alpha1
+    kind: KubeNodeConfig
+    nodeIP: {}
+    labels:
+      node-role.kubernetes.io/control-plane: ""
+      node.kubernetes.io/exclude-from-external-load-balancers: ""
+      rtl.de/cluster-name: athena
+    taints:
+      node-role.kubernetes.io/control-plane: NoSchedule
+    ---
+    apiVersion: v1alpha1
+    kind: KubeletConfig
+    image: ghcr.io/siderolabs/kubelet:v1.37.1
+    config: {}
+    defaultRuntimeSeccompProfileEnabled: true
+    ---
+    apiVersion: v1alpha1
+    kind: KubeNetworkConfig
+    dnsDomain: cluster.local
+    podSubnets:
+      - 10.244.0.0/16
+    serviceSubnets:
+      - 10.96.0.0/12
+    ---
+    apiVersion: v1alpha1
+    kind: KubeAPIServerCAConfig
+    issuingCA:
+      cert: |
+        <redacted>
+      key: |
+        <redacted>
+    ---
+    apiVersion: v1alpha1
+    kind: KubePrismConfig
+    port: 7445
+    ---
+    apiVersion: v1alpha1
+    kind: KubeAggregatorCAConfig
+    issuingCA:
+      cert: |
+        <redacted>
+      key: |
+        <redacted>
+    ---
+    apiVersion: v1alpha1
+    kind: KubeAdmissionControlConfig
+    name: PodSecurity
+    configuration:
+      apiVersion: pod-security.admission.config.k8s.io/v1alpha1
+      defaults:
+        audit: restricted
+        audit-version: latest
+        enforce: baseline
+        enforce-version: latest
+        warn: restricted
+        warn-version: latest
+      exemptions:
+        namespaces:
+          - kube-system
+        runtimeClasses: []
+        usernames: []
+      kind: PodSecurityConfiguration
+    ---
+    apiVersion: v1alpha1
+    kind: KubeAuditPolicyConfig
+    configuration:
+      apiVersion: audit.k8s.io/v1
+      kind: Policy
+      rules:
+        - level: Metadata
+    ---
+    apiVersion: v1alpha1
+    kind: KubeAuthenticationConfig
+    configuration:
+      anonymous:
+        conditions:
+          - path: /livez
+          - path: /readyz
+          - path: /healthz
+        enabled: true
+      jwt: []
+    ---
+    apiVersion: v1alpha1
+    kind: KubeAuthorizerConfig
+    name: node
+    type: Node
+    ---
+    apiVersion: v1alpha1
+    kind: KubeAuthorizerConfig
+    name: rbac
+    type: RBAC
+    ---
+    apiVersion: v1alpha1
+    kind: KubeEtcdEncryptionConfig
+    config:
+      resources:
+        - providers:
+            - secretbox:
+                keys:
+                  - name: key2
+                    secret: <redacted>
+          resources:
+            - secrets
+    ---
+    apiVersion: v1alpha1
+    kind: KubeServiceAccountConfig
+    issuer:
+      privateKey: |
+        <redacted>
+      issuerURL: https://athena.p1.internal:6443
+    ---
+    apiVersion: v1alpha1
+    kind: KubeAPIServerConfig
+    image: registry.k8s.io/kube-apiserver:v1.37.1
+    certExtraSANs:
+      - athena.p1.internal
+    ---
+    apiVersion: v1alpha1
+    kind: KubeControllerManagerConfig
+    image: registry.k8s.io/kube-controller-manager:v1.37.1
+    ---
+    apiVersion: v1alpha1
+    kind: KubeSchedulerConfig
+    image: registry.k8s.io/kube-scheduler:v1.37.1
+    config: {}
+    ---
+    apiVersion: v1alpha1
+    kind: KubeProxyConfig
+    image: registry.k8s.io/kube-proxy:v1.37.1
+    config: {}
+    ---
+    apiVersion: v1alpha1
+    kind: KubeFlannelCNIConfig
+    backendType: vxlan
+    backendPort: 4789
+    ---
+    apiVersion: v1alpha1
+    kind: KubeCoreDNSConfig
+    enabled: true
+    ---
+    apiVersion: v1alpha1
+    kind: UnattendedInstallConfig
+    installer:
+      image: factory.talos.dev/nocloud-installer-secureboot/17bd088c71807ae797c16e85efb133b27814f1a333312bf597c3d4bc6f7c13d7:v1.14.5
+    provisioning:
+      diskSelector:
+        match: disk.dev_path == "/dev/sda"
+      wipe: true
+    ---
+    apiVersion: v1alpha1
+    kind: Layer2VIPConfig
+    name: 192.168.3.247
+    link: eth0
   kubernetesVersions:
-    apiServer: v1.34.3
-    controllerManager: v1.34.3
-    kubelet: v1.34.3
-    scheduler: v1.34.3
+    apiServer: v1.37.1
+    controllerManager: v1.37.1
+    kubelet: v1.37.1
+    scheduler: v1.37.1
   operationStatus:
-    lastTransitionTime: "2025-12-18T15:06:12Z"
-    message: Node apply operation complete
+    lastTransitionTime: "2026-10-30T09:36:01Z"
+    message: Node configuration is already in sync, so no apply was needed
     phase: Done
-    reason: ApplyComplete
+    reason: SkippedConfigInSync
     type: Apply
-  talosSchematicID: 7bc843886ddac143fae1c3eddfe74664782e0aa50fdce9531070b20be5fc82ae
-  talosVersion: v1.11.5
+  patchHierarchy:
+  - source: operator:github.com/siderolabs/talos/pkg/machinery/config/generate
+    synthetic: true
+    syntheticExplanation: the base config generated by the Talos API equivalent to
+      `talosctl gen config --talos-version="v1.14"` (version from cluster.spec.talosVersionContract)
+  - source: cluster.spec.patches:0
+  - source: cluster.spec.controlPlanePatches:0
+  - source: operator:node-role
+    synthetic: true
+    syntheticExplanation: a patch defining the machine type
+  - source: node.status.kubernetesVersions
+    synthetic: true
+    syntheticExplanation: a patch defining all kubernetes components and their versions,
+      sourced from node.status.kubernetesVersions, defaulted from cluster.spec.kubernetesVersion
+  - source: operator:cluster-name-label
+    synthetic: true
+    syntheticExplanation: a patch adding the rtl.de/cluster-name label to the node
+  - source: operator:hostname
+    synthetic: true
+    syntheticExplanation: a patch defining the machine hostname
+  talosSchematicID: 17bd088c71807ae797c16e85efb133b27814f1a333312bf597c3d4bc6f7c13d7
+  talosVersion: v1.14.5

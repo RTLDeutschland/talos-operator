@@ -298,6 +298,10 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	// WORK BEGINS HERE
+	if err := ctx.Err(); err != nil {
+		log.Trace().Err(err).Msg("Context cancelled before initial work")
+		return ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+	}
 
 	// provision the node from maintenance mode if needed
 	res, err := r.handleNodeProvisioning(ctx, node, cluster)
@@ -362,7 +366,8 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 	}
 
-	// run bootstrap if requested
+	// run bootstrap if requested (status may error on an unprovisioned node)
+	// FIXME: verify above claim and necessity of special priority
 	res, err = r.handleNodeBootstrap(ctx, node, cluster)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -370,6 +375,11 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if res != nil {
 		log.Trace().Dur("requeue_after", res.RequeueAfter).Msg("Node bootstrap operation requeued")
 		return *res, nil
+	}
+
+	if err := ctx.Err(); err != nil {
+		log.Trace().Err(err).Msg("Context cancelled before status work")
+		return ctrl.Result{RequeueAfter: RequeueImmediate}, nil
 	}
 
 	// figure out if node config is in sync with expected config
@@ -392,6 +402,11 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if res != nil {
 		log.Trace().Dur("requeue_after", res.RequeueAfter).Msg("Node status check requeued")
 		return *res, nil
+	}
+
+	if err := ctx.Err(); err != nil {
+		log.Trace().Err(err).Msg("Context cancelled before main work")
+		return ctrl.Result{RequeueAfter: RequeueImmediate}, nil
 	}
 
 	if r.isOperationComplete(node) {

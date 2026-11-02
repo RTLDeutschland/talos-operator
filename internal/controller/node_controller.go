@@ -366,17 +366,6 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 	}
 
-	// run bootstrap if requested (status may error on an unprovisioned node)
-	// FIXME: verify above claim and necessity of special priority
-	res, err = r.handleNodeBootstrap(ctx, node, cluster)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if res != nil {
-		log.Trace().Dur("requeue_after", res.RequeueAfter).Msg("Node bootstrap operation requeued")
-		return *res, nil
-	}
-
 	if err := ctx.Err(); err != nil {
 		log.Trace().Err(err).Msg("Context cancelled before status work")
 		return ctrl.Result{RequeueAfter: RequeueImmediate}, nil
@@ -415,6 +404,9 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{RequeueAfter: defaultRefreshInterval()}, nil
 	}
 	switch node.Status.Operation.Type {
+	case NodeOperationTypeProvision: // no-op, just in case
+	case NodeOperationTypeBootstrap:
+		res, err = r.handleNodeBootstrap(ctx, node, cluster)
 	case NodeOperationTypeApply:
 		res, err = r.handleNodeApply(ctx, node, cluster)
 	case NodeOperationTypeUpgrade:

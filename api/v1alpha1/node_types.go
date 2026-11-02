@@ -242,30 +242,34 @@ type KubernetesVersions struct {
 	Kubelet           string `json:"kubelet,omitempty"`
 }
 
+// GetComponentVersion gets a specific Kubernetes component version by its name.
+//
+// Use component names from ./constants.
 func (kv *KubernetesVersions) GetComponentVersion(component string) string {
 	switch component {
-	case "apiserver":
+	case KubernetesComponentAPIServer:
 		return kv.APIServer
-	case "controllerManager":
+	case KubernetesComponentControllerManager:
 		return kv.ControllerManager
-	case "scheduler":
+	case KubernetesComponentScheduler:
 		return kv.Scheduler
-	case "kubelet":
+	case KubernetesComponentKubelet:
 		return kv.Kubelet
 	default:
 		return ""
 	}
 }
 
+// SetComponentVersion sets a specific Kubernetes component version by its name.
 func (kv *KubernetesVersions) SetComponentVersion(component, version string) {
 	switch component {
-	case "apiserver":
+	case KubernetesComponentAPIServer:
 		kv.APIServer = version
-	case "controllerManager":
+	case KubernetesComponentControllerManager:
 		kv.ControllerManager = version
-	case "scheduler":
+	case KubernetesComponentScheduler:
 		kv.Scheduler = version
-	case "kubelet":
+	case KubernetesComponentKubelet:
 		kv.Kubelet = version
 	}
 }

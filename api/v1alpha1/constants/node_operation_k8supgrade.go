@@ -10,3 +10,11 @@ const (
 const (
 	NodeOperationReasonSuccessfulReboot = "SuccessfulReboot"
 )
+
+// Kubernetes components used for KubernetesComponentUpgrade node operations:
+const (
+	KubernetesComponentAPIServer         = "apiserver"
+	KubernetesComponentControllerManager = "controllerManager"
+	KubernetesComponentScheduler         = "scheduler"
+	KubernetesComponentKubelet           = "kubelet"
+)

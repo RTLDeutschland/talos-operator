@@ -256,12 +256,12 @@ func (kv *KubernetesVersions) GetComponentVersion(component string) string {
 	case KubernetesComponentKubelet:
 		return kv.Kubelet
 	default:
-		return ""
+		panic("unknown Kubernetes component: " + component)
 	}
 }
 
 // SetComponentVersion sets a specific Kubernetes component version by its name.
-func (kv *KubernetesVersions) SetComponentVersion(component, version string) {
+func (kv *KubernetesVersions) SetComponentVersion(component string, version string) {
 	switch component {
 	case KubernetesComponentAPIServer:
 		kv.APIServer = version
@@ -271,6 +271,8 @@ func (kv *KubernetesVersions) SetComponentVersion(component, version string) {
 		kv.Scheduler = version
 	case KubernetesComponentKubelet:
 		kv.Kubelet = version
+	default:
+		panic("unknown Kubernetes component: " + component)
 	}
 }
 

@@ -169,6 +169,47 @@ spec:
                     description: DrainTimeout defines a timeout for drain operations
                       performed by the operator.
                     type: string
+                  etcdBackup:
+                    description: EtcdBackup defines options relating to the automatic
+                      etcd backup feature.
+                    properties:
+                      credentialsSecretRef:
+                        description: CredentialsRef is a reference to a secret containing
+                          the credentials used to access S3 to upload the etcd backups.
+                        properties:
+                          name:
+                            description: Name of the referenced resource.
+                            type: string
+                          namespace:
+                            description: Namespace of the referenced resource.
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      enabled:
+                        default: true
+                        description: Enabled will enable the etcd backups feature.
+                        type: boolean
+                      encryptionAgeRecipients:
+                        description: |-
+                          EncryptionAgeRecipients enables https://age-encryption.org/ of the snapshot file
+                          to the following list of recipients.
+                        items:
+                          type: string
+                        type: array
+                      interval:
+                        description: |-
+                          Interval specifies how often etcd backups should be performed, in duration format (e.g., "30m", "1h").
+                          Defaults to every 4 hours if left unspecified.
+                        type: string
+                      prefix:
+                        description: |-
+                          Prefix specifies a prefix to use in the S3 bucket for storing etcd backups.
+                          Full object key format is <prefix>/<cluster namespace>/<cluster name>/<timestamp>.snap
+                        type: string
+                    required:
+                    - credentialsSecretRef
+                    type: object
                   maintenanceWindow:
                     description: Maintenance defines options relating to the maintenance
                       window feature.
@@ -356,6 +397,11 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              lastSuccessfulEtcdBackup:
+                description: LastSuccessfulEtcdBackup indicates the time of the last
+                  successful etcd backup.
+                format: date-time
+                type: string
               nextMaintenanceWindow:
                 description: NextMaintenanceWindow indicates the start time of the
                   next maintenance window.

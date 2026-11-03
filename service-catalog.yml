@@ -1,0 +1,13 @@
+review: "2027-11-20"
+kind: s3.bucket/v2
+env: prod
+criticality: high
+context: "rtl/tech/netapp/s3/s3-grid-01.netrtl.com/bucket"
+id: "01a1f997-42d2-71cc-9993-4893011057b3"
+name: "S3 Bucket s3-grid-01.netrtl.com/ac-talos-etcd-snapshots"
+desc: "S3 Bucket on s3-grid-01.netrtl.com"
+owner: "cassandra.beelen@rtl.de"
+spec:
+  endpoint: "https://s3-grid-01.netrtl.com"
+  bucket:
+    name: "ac-talos-etcd-snapshots"

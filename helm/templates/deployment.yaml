@@ -48,6 +48,7 @@ spec:
             {{- end }}
             - --enable-node-label={{ .Values.features.enableNodeLabel }}
             - --enable-cross-namespace-patch-refs={{ .Values.features.enableCrossNamespacePatchRefs }}
+            - --enable-cross-namespace-backup-credentials-refs={{ .Values.features.enableCrossNamespaceBackupCredentialsRefs }}
             - --enable-http2={{ .Values.features.enableHTTP2 }}
             - --enable-pprof={{ .Values.features.enablePProf }}
           securityContext:

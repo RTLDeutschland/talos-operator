@@ -49,7 +49,7 @@
       subPackages = ["cmd/kubectl-talos"];
       inherit env ldflags;
 
-      vendorHash = vendorHash;
+      inherit vendorHash;
       proxyVendor = true;
 
       # go test cannot execute cross-compiled binaries

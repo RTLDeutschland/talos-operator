@@ -23,7 +23,8 @@
 
       n2cPkgs = nix2container.packages.${system};
 
-      vendorHash = "sha256-cjg5PLuuI2KQa5bGYnJ9NFiA2o6HihJUSu70BtMYQyk=";
+      vendorHash = "sha256-zs58wsWto4Zn0ob25GQ3ACTyYCYK+zFl1O0imWlNjfg=";
+      #vendorHash = lib.fakeHash; # for updating go.mod
       version = lib.strings.trim (builtins.readFile ./VERSION);
 
       # filter the app sources to avoid spurious rebuilds
@@ -84,7 +85,7 @@
           inherit env;
           inherit ldflags;
 
-          vendorHash = vendorHash;
+          inherit vendorHash;
           proxyVendor = true;
 
           meta = {
@@ -108,7 +109,7 @@
           inherit env;
           inherit ldflags;
 
-          vendorHash = vendorHash;
+          inherit vendorHash;
           proxyVendor = true;
 
           meta = {
@@ -137,6 +138,7 @@
             ''
               mkdir -p $out/etc
               ln -s ${pkgs.cacert.out}/etc/ssl $out/etc/ssl
+              mkdir -p $out/tmp
             '';
           config = {
             Entrypoint = ["${self.packages.${system}.operator-manager}/bin/manager"];

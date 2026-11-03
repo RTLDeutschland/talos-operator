@@ -5,6 +5,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 // +kubebuilder:object:root=true
@@ -183,12 +184,12 @@ type ClusterMaintenanceWindow struct {
 
 // IsEnabled returns true if the maintenance window is enabled.
 func (mw ClusterMaintenanceWindow) IsEnabled() bool {
-	return mw.Enabled == nil || *mw.Enabled
+	return ptr.Deref(mw.Enabled, true)
 }
 
 // IsAnnotationsEnabled returns true if maintenance window annotations on nodes are enabled.
 func (mw ClusterMaintenanceWindow) IsAnnotationsEnabled() bool {
-	return mw.AnnotationsEnabled == nil || *mw.AnnotationsEnabled
+	return ptr.Deref(mw.AnnotationsEnabled, true)
 }
 
 // ClusterArgoCDSecret defines the desired state of the ArgoCD Secret for a Cluster.

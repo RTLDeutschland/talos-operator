@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -148,14 +149,14 @@ func (r *ClusterReconciler) runSubOperations(
 		}
 
 		// monitor the node operation
+		nodeOp := ptr.Deref(node.Status.Operation, talosv1alpha1.NodeOperationStatus{})
 		if subOp.Phase == SubOpPhaseApplying {
 			// check if the node operation is done
-			if node.Status.Operation != nil &&
-				(node.Status.Operation.Phase == NodeOperationPhaseDone || node.Status.Operation.Phase == NodeOperationPhaseFailed) {
+			if nodeOp.Phase == NodeOperationPhaseDone || nodeOp.Phase == NodeOperationPhaseFailed {
 				// operation is done
-				subOp.Phase = node.Status.Operation.Phase
-				subOp.Reason = node.Status.Operation.Reason
-				subOp.Message = node.Status.Operation.Message
+				subOp.Phase = nodeOp.Phase
+				subOp.Reason = nodeOp.Reason
+				subOp.Message = nodeOp.Message
 				subOp.LastTransitionTime = metav1.Now()
 				opStatus.SubOperations[i] = subOp
 				err = r.updateOpStatus(

@@ -41,6 +41,7 @@ leaderElection:
 features:
   enableNodeLabel: true
   enableCrossNamespacePatchRefs: true
+  enableCrossNamespaceBackupCredentialsRefs: true
   enableHTTP2: false
   enablePProf: false
 

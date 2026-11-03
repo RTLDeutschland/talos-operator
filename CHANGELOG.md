@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.1.0 - TBD
+
+### Automated etcd backups
+
+**Added** a feature for creating scheduled etcd backups to S3.
+
+- Supports optional prefix keying per-cluster & per-backup-credential.
+  This then gets prefixed to `[prefix]/<cluster namespace>/<cluster name>/<timestamp>.snap.zst`.
+- Compresses backups using a Go implementation of zstd.
+- Supports optional https://age-encryption.org of backup files.
+
+#### Thanks
+
+Thanks to [@klauspost](https://github.com/klauspost) for the zstd implementation.
+Thanks to [@FiloSottile](https://github.com/FiloSottile) for creating age.
+Thanks to [@minio](https://github.com/minio) & [@pgsty](https://github.com/pgsty) for the S3 SDK.
+
 ## v1.0.3 - 2026-11-19
 
 - **Fixed** a bug in kubectl-talos where watch would not show the initial operation status due to clock drift.

@@ -104,6 +104,10 @@ type ClusterOptions struct {
 	// +optional
 	ArgoCDSecret ClusterArgoCDSecret `json:"argoCDSecret,omitzero"`
 
+	// EtcdBackup defines options relating to the automatic etcd backup feature.
+	// +optional
+	EtcdBackup *ClusterEtcdBackup `json:"etcdBackup,omitempty"`
+
 	// PhaseTimeout defines the maximum length that an operation phase may take before being
 	// considered failed. This applies to all phases except Draining, the most notable of
 	// which is the Verifying phase.
@@ -250,6 +254,10 @@ type ClusterStatus struct {
 	// NextMaintenanceWindow indicates the start time of the next maintenance window.
 	// +optional
 	NextMaintenanceWindow metav1.Time `json:"nextMaintenanceWindow,omitzero"`
+
+	// LastSuccessfulEtcdBackup indicates the time of the last successful etcd backup.
+	// +optional
+	LastSuccessfulEtcdBackup *metav1.Time `json:"lastSuccessfulEtcdBackup,omitempty"`
 }
 
 // ClusterOperationStatus defines the status of a Cluster operation.

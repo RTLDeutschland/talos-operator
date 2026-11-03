@@ -13,6 +13,7 @@
     - [Rolling reboots](./4.2-rolling_reboot.md)
     - [Kubernetes upgrades](./4.4-kubernetes_upgrades.md)
     - [Unattended configuration and Kubernetes upgrades](./4.5-automated_upgrades.md)
+    - [Automatic etcd backups](./4.6_etcd_backups.md)
   - [Kubectl plugin](./5.1-kubectl_plugin.md)
   - [Troubleshooting]()
     - [Resolving a failed operation](./5.2-resolving_failed_operations.md)

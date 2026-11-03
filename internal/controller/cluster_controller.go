@@ -206,6 +206,15 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}
 
+	// run etcd backups if configured
+	res, err := r.reconcileEtcdBackups(ctx, cluster)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("error reconciling etcd backups: %w", err)
+	}
+	if res != nil {
+		return *res, nil
+	}
+
 	// automatically trigger bootstrap if cluster is not bootstrapped but ready for it
 	autoBootstrapEnabled := cluster.Spec.Options.AutoBootstrap == nil ||
 		*cluster.Spec.Options.AutoBootstrap
@@ -376,7 +385,6 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// run cluster operations
-	var res *ctrl.Result
 	err = nil
 	switch cluster.Status.Operation.Type {
 	case ClusterOperationTypeRollingReboot:

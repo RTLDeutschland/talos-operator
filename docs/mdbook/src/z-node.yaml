@@ -1,23 +1,23 @@
 apiVersion: talos.rtl.de/v1alpha1
 kind: Node
 metadata:
-  # annotations:
-  #   kubectl.kubernetes.io/last-applied-configuration: |
-  #     {"apiVersion":"talos.rtl.de/v1alpha1","kind":"Node","metadata":{"annotations":{},"name":"athena-c1","namespace":"sapphiccode-talos"},"spec":{"clusterRef":"athena","role":"controlplane"}}
+  ## annotations:
+  ##   kubectl.kubernetes.io/last-applied-configuration: |
+  ##     {"apiVersion":"talos.rtl.de/v1alpha1","kind":"Node","metadata":{"annotations":{},"name":"athena-c1","namespace":"sapphiccode-talos"},"spec":{"clusterRef":"athena","role":"controlplane"}}
   creationTimestamp: "2026-10-29T15:39:25Z"
   finalizers:
   - talos.rtl.de/finalizer
-  # generation: 9
+  ## generation: 9
   name: athena-c1
   namespace: sapphiccode-talos
-  # resourceVersion: "68797"
-  # uid: 9417bdd0-6800-4547-bd5e-1cea06ac6dcd
+  ## resourceVersion: "68797"
+  ## uid: 9417bdd0-6800-4547-bd5e-1cea06ac6dcd
 spec:
   clusterRef: athena
   role: controlplane
 status:
-  # appliedConfigHash: a5fac14e19f239a53a9eadae109c09b020f0db21b7b446ee5e9ff942ccccd8b3
-  # bootID: c80b01a9-85c2-4f26-9a3f-471e94f2fab8
+  ## appliedConfigHash: a5fac14e19f239a53a9eadae109c09b020f0db21b7b446ee5e9ff942ccccd8b3
+  ## bootID: c80b01a9-85c2-4f26-9a3f-471e94f2fab8
   conditions:
   - lastTransitionTime: "2026-10-29T16:00:47Z"
     message: Node is reachable

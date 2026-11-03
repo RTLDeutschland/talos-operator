@@ -130,6 +130,8 @@ func rootCommand() *cobra.Command {
 		BoolVar(&options.featureFlags.EnableRTLNodeLabel, "enable-node-label", true, "Enables the \"rtl.de/cluster-name\" label generated into machine configuration.")
 	cmd.Flags().
 		BoolVar(&options.featureFlags.EnableCrossNamespacePatchRefs, "enable-cross-namespace-patch-refs", true, "Enables patch references from a different namespace than the Node or Cluster resource.")
+	cmd.Flags().
+		BoolVar(&options.featureFlags.EnableCrossNamespaceBackupCredentialsRefs, "enable-cross-namespace-backup-credentials-refs", true, "Enables cross-namespace references for backup credentials.")
 
 	return cmd
 }

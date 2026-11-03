@@ -48,6 +48,7 @@ spec:
             {{- end }}
             - --enable-node-label={{ .Values.features.enableNodeLabel }}
             - --enable-cross-namespace-patch-refs={{ .Values.features.enableCrossNamespacePatchRefs }}
+            - --enable-cross-namespace-backup-credentials-refs={{ .Values.features.enableCrossNamespaceBackupCredentialsRefs }}
             - --enable-http2={{ .Values.features.enableHTTP2 }}
             - --enable-pprof={{ .Values.features.enablePProf }}
           securityContext:
@@ -66,14 +67,18 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- if .Values.certManager.enabled }}
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- if .Values.certManager.enabled }}
             - name: metrics-certs
               mountPath: /tmp/k8s-metrics-server/metrics-certs
               readOnly: true
-          {{- end }}
-      {{- if .Values.certManager.enabled }}
+            {{- end }}
       volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- if .Values.certManager.enabled }}
         - name: metrics-certs
           secret:
             secretName: {{ .Values.certManager.certificate.secretName }}
@@ -85,7 +90,7 @@ spec:
                 path: tls.crt
               - key: tls.key
                 path: tls.key
-      {{- end }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

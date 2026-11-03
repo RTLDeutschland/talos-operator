@@ -5,4 +5,4 @@ src = "src"
 title = "Talos Operator Docs"
 
 [output.html.code.hidelines]
-yaml = "# "
+yaml = "##"

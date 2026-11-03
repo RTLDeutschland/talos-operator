@@ -1,5 +1,7 @@
 _default: build
 
+alias docs := doc
+
 # General recipes
 [group('general')]
 all: build

@@ -109,15 +109,11 @@ func (r *ClusterReconciler) updateMaintenanceStatus(cluster *talosv1alpha1.Clust
 	return false
 }
 
-func (r *ClusterReconciler) updateStatus(
+func (r *ClusterReconciler) reconcileFinalizers(
 	ctx context.Context,
 	cluster *talosv1alpha1.Cluster,
+	clusterNodes []talosv1alpha1.Node,
 ) error {
-	clusterNodes, err := listEligibleNodes(r, ctx, cluster)
-	if err != nil {
-		return fmt.Errorf("error listing nodes for cluster %s: %w", cluster.Name, err)
-	}
-
 	// to avoid the cluster or its dependent secret going away prematurely in the event of
 	// namespace deletion, ensure that finalizers exist on both resources
 	// until the cluster has no more active nodes.
@@ -150,7 +146,7 @@ func (r *ClusterReconciler) updateStatus(
 	}
 
 	secret := &corev1.Secret{}
-	err = r.Get(ctx, client.ObjectKey{
+	err := r.Get(ctx, client.ObjectKey{
 		Namespace: cluster.Namespace,
 		Name:      cluster.Spec.SecretsRef,
 	}, secret)
@@ -184,6 +180,23 @@ func (r *ClusterReconciler) updateStatus(
 		if err != nil {
 			return fmt.Errorf("failed to remove cluster secret finalizer: %w", err)
 		}
+	}
+	return nil
+}
+
+func (r *ClusterReconciler) updateStatus(
+	ctx context.Context,
+	cluster *talosv1alpha1.Cluster,
+) error {
+	clusterNodes, err := listEligibleNodes(r, ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("error listing nodes for cluster %s: %w", cluster.Name, err)
+	}
+
+	// reconcile finalizers
+	err = r.reconcileFinalizers(ctx, cluster, clusterNodes)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile finalizers: %w", err)
 	}
 
 	// do status checks

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	talosv1alpha1 "github.com/RTLDeutschland/talos-operator/api/v1alpha1"
@@ -106,6 +107,13 @@ func (r *NodeReconciler) handleNodeUpgrade(
 	// get running OS version:
 	talosVersion, talosSchematicID, err := getNodeTalosRelease(tCtx, talosClient)
 	if err != nil {
+		// retry if intermittent connection error
+		if strings.HasSuffix(err.Error(), "connect: connection refused") &&
+			time.Since(opStatus.LastTransitionTime.Time) < 5*time.Minute {
+			log.Debug().Err(err).Msg("Temporary connection error, will retry shortly")
+			return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		}
+
 		if err := r.updateOpStatus(
 			ctx,
 			NodeOperationPhaseFailed,
@@ -238,19 +246,6 @@ func (r *NodeReconciler) handleNodeUpgrade(
 		}
 
 		// check which variant of upgrade we should be doing
-		talosVersion, _, err := getNodeTalosRelease(tCtx, talosClient)
-		if err != nil {
-			if err := r.updateOpStatus(
-				ctx,
-				NodeOperationPhaseFailed,
-				NodeReasonNodeUnreachable,
-				fmt.Sprintf("Failed to get node Talos release: %v", err),
-			); err != nil {
-				return nil, fmt.Errorf("error updating operation status: %w", err)
-			}
-			return nil, nil
-		}
-
 		// FIXME(deprecation): When dropping support for Talos < 1.13
 		if talosVersion.GTE(semver.Version{Major: 1, Minor: 13}) {
 			if err := r.updateOpStatus(

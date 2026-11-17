@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.0.3 - TBD
 
 - **Fixed** a bug in kubectl-talos where watch would not show the initial operation status due to clock drift.
+- **Refactored** upgrade logic to avoid a duplicate version check.
+- **Fixed** temporary connection error handling in the above check.
 
 ## v1.0.2 - 2026-11-02
 

@@ -16,7 +16,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
-var programStart = time.Now()
+var programStart = time.Now().Add(-2 * time.Second) // to account for some local clock drift
 var spinnerTick int
 var spinnerOut = os.Stderr
 

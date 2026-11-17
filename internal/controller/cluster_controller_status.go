@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"time"
 	_ "time/tzdata"
 
@@ -15,6 +16,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *ClusterReconciler) updateMaintenanceStatus(cluster *talosv1alpha1.Cluster) bool {
@@ -113,6 +116,74 @@ func (r *ClusterReconciler) updateStatus(
 	clusterNodes, err := r.listEligibleNodes(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("error listing nodes for cluster %s: %w", cluster.Name, err)
+	}
+
+	// to avoid the cluster or its dependent secret going away prematurely in the event of
+	// namespace deletion, ensure that finalizers exist on both resources
+	// until the cluster has no more active nodes.
+	if len(clusterNodes) > 0 && !slices.Contains(cluster.Finalizers, Finalizer) {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			clr := &talosv1alpha1.Cluster{}
+			err := r.Get(ctx, client.ObjectKeyFromObject(cluster), clr)
+			if err != nil {
+				return fmt.Errorf("failed getting cluster: %w", err)
+			}
+			clr.Finalizers = append(clr.Finalizers, Finalizer)
+			return r.Update(ctx, clr)
+		})
+		if err != nil {
+			return fmt.Errorf("failed to set cluster finalizer: %w", err)
+		}
+	} else if len(clusterNodes) == 0 && slices.Contains(cluster.Finalizers, Finalizer) {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			clr := &talosv1alpha1.Cluster{}
+			err := r.Get(ctx, client.ObjectKeyFromObject(cluster), clr)
+			if err != nil {
+				return fmt.Errorf("failed getting cluster: %w", err)
+			}
+			clr.Finalizers = lo.Without(clr.Finalizers, Finalizer)
+			return r.Update(ctx, clr)
+		})
+		if err != nil {
+			return fmt.Errorf("failed to remove cluster finalizer: %w", err)
+		}
+	}
+
+	secret := &corev1.Secret{}
+	err = r.Get(ctx, client.ObjectKey{
+		Namespace: cluster.Namespace,
+		Name:      cluster.Spec.SecretsRef,
+	}, secret)
+	if err != nil {
+		return fmt.Errorf("failed to get cluster secret: %w", err)
+	}
+
+	if len(clusterNodes) > 0 && !slices.Contains(secret.Finalizers, Finalizer) {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			sec := &corev1.Secret{}
+			err := r.Get(ctx, client.ObjectKeyFromObject(secret), sec)
+			if err != nil {
+				return fmt.Errorf("failed getting cluster secret: %w", err)
+			}
+			sec.Finalizers = append(sec.Finalizers, Finalizer)
+			return r.Update(ctx, sec)
+		})
+		if err != nil {
+			return fmt.Errorf("failed to set cluster secret finalizer: %w", err)
+		}
+	} else if len(clusterNodes) == 0 && slices.Contains(secret.Finalizers, Finalizer) {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			sec := &corev1.Secret{}
+			err := r.Get(ctx, client.ObjectKeyFromObject(secret), sec)
+			if err != nil {
+				return fmt.Errorf("failed getting cluster secret: %w", err)
+			}
+			sec.Finalizers = lo.Without(sec.Finalizers, Finalizer)
+			return r.Update(ctx, sec)
+		})
+		if err != nil {
+			return fmt.Errorf("failed to remove cluster secret finalizer: %w", err)
+		}
 	}
 
 	// do status checks

@@ -15,5 +15,7 @@ const (
 
 // Node finalizers:
 const (
-	NodeFinalizer = "talos.rtl.de/finalizer"
+	// Deprecated: use [constants.Finalizer] instead
+	// go:fix inline
+	NodeFinalizer = Finalizer
 )

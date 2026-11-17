@@ -344,7 +344,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// check if the Node was deleted but we need to perform cleanup
 	if r.isOperationComplete(node) && node.DeletionTimestamp != nil &&
-		slices.Contains(node.Finalizers, NodeFinalizer) {
+		slices.Contains(node.Finalizers, Finalizer) {
 		log.Info().Msg("Node deletion detected, starting reset operation and cleanup")
 		err := r.updateNodeStatus(ctx, func(n *talosv1alpha1.Node) {
 			n.Status.Operation = &talosv1alpha1.NodeOperationStatus{

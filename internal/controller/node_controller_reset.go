@@ -216,7 +216,7 @@ func (r *NodeReconciler) handleNodeReset(
 
 			// remove finalizer to allow deletion
 			newFinalizers := lo.Filter(node.Finalizers, func(item string, index int) bool {
-				return item != NodeFinalizer
+				return item != Finalizer
 			})
 			err = r.updateNode(ctx, func(n *talosv1alpha1.Node) {
 				n.Finalizers = newFinalizers

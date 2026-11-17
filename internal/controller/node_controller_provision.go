@@ -327,7 +327,7 @@ func (r *NodeReconciler) handleNodeProvisioning(
 
 		// add finalizer
 		err = r.updateNode(ctx, func(n *talosv1alpha1.Node) {
-			n.Finalizers = lo.Uniq(append(n.Finalizers, NodeFinalizer))
+			n.Finalizers = lo.Uniq(append(n.Finalizers, Finalizer))
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to add finalizer to node after provisioning: %w", err)

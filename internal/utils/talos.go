@@ -14,7 +14,7 @@ func ParseOSRelease(reader io.Reader) (map[string]string, error) {
 	if err != nil {
 		return result, err
 	}
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		if len(strings.TrimSpace(line)) == 0 || strings.HasPrefix(line, "#") {
 			continue
 		}

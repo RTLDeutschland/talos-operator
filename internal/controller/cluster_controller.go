@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/samber/lo"
 	talosconfig "github.com/siderolabs/talos/pkg/machinery/config"
 	talossecrets "github.com/siderolabs/talos/pkg/machinery/config/generate/secrets"
 	"github.com/siderolabs/talos/pkg/machinery/constants"
@@ -158,7 +157,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("error marshalling generated secrets bundle: %w", err)
 		}
-		clusterSecret.Immutable = lo.ToPtr(true)
+		clusterSecret.Immutable = new(true)
 		clusterSecret.Data = map[string][]byte{"secrets.yaml": secretsYaml}
 		err = r.Create(ctx, clusterSecret)
 		if err != nil {
@@ -283,7 +282,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// NextMaintenanceWindow is set in updateMaintenanceStatus which handles enablement of the
 	// maintenance window feature, so we can rely on IsZero here.
 	inMaintenanceWindow := !cluster.Status.NextMaintenanceWindow.IsZero() &&
-		cluster.Status.NextMaintenanceWindow.Before(lo.ToPtr(metav1.Now()))
+		cluster.Status.NextMaintenanceWindow.Before(new(metav1.Now()))
 	didLastClusterOperationCompleteSuccessfully := cluster.Operation == nil &&
 		(cluster.Status.Operation == nil || cluster.Status.Operation.Phase == ClusterOperationPhaseDone)
 	if inMaintenanceWindow && didLastClusterOperationCompleteSuccessfully {

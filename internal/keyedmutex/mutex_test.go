@@ -61,7 +61,7 @@ func TestMutexMap_For(t *testing.T) {
 		var wg sync.WaitGroup
 		keys := []string{"a", "b", "c", "d", "e"}
 
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()

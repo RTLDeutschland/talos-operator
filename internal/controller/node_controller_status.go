@@ -10,7 +10,6 @@ import (
 
 	"github.com/cosi-project/runtime/pkg/resource"
 	"github.com/cosi-project/runtime/pkg/safe"
-	"github.com/samber/lo"
 
 	. "github.com/RTLDeutschland/talos-operator/api/v1alpha1/constants"
 	configresource "github.com/siderolabs/talos/pkg/machinery/resources/config"
@@ -160,7 +159,7 @@ func (r *NodeReconciler) reconcileNodeStatus(
 	// determine ConfigInSync status:
 	// fetch the running machine config
 	// https://github.com/siderolabs/talos/blob/80ab7a0643fc8057283a8ba3eb912d0ee453c143/cmd/talosctl/cmd/talos/get.go#L95C93-L95C105
-	rd, err := talosClient.ResolveResourceKind(tCtx, lo.ToPtr(""), "machineconfig")
+	rd, err := talosClient.ResolveResourceKind(tCtx, new(""), "machineconfig")
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve machineconfig RD: %w", err)
 	}

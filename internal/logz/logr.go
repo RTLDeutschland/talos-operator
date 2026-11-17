@@ -25,17 +25,17 @@ func (s *LogrSink) Enabled(level int) bool {
 }
 
 // Info logs an info message with the given key-value pairs.
-func (s *LogrSink) Info(level int, msg string, keysAndValues ...interface{}) {
+func (s *LogrSink) Info(level int, msg string, keysAndValues ...any) {
 	s.Logger.WithLevel(zerolog.InfoLevel - zerolog.Level(level)).Fields(keysAndValues).Msg(msg)
 }
 
 // Error logs an error message with the given key-value pairs.
-func (s *LogrSink) Error(err error, msg string, keysAndValues ...interface{}) {
+func (s *LogrSink) Error(err error, msg string, keysAndValues ...any) {
 	s.Logger.WithLevel(zerolog.ErrorLevel).Fields(keysAndValues).Err(err).Msg(msg)
 }
 
 // WithValues returns a new LogrSink with the given key-value pairs added to the context.
-func (s *LogrSink) WithValues(keysAndValues ...interface{}) logr.LogSink {
+func (s *LogrSink) WithValues(keysAndValues ...any) logr.LogSink {
 	return &LogrSink{Logger: s.Logger.With().Fields(keysAndValues).Logger()}
 }
 

@@ -40,7 +40,6 @@ type ClusterReconciler struct {
 
 // +kubebuilder:rbac:groups=talos.rtl.de,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=talos.rtl.de,resources=clusters/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=talos.rtl.de,resources=clusters/finalizers,verbs=update
 // +kubebuilder:rbac:groups=talos.rtl.de,resources=nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=create;update;get;list;watch
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch

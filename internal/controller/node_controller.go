@@ -47,7 +47,6 @@ type NodeReconciler struct {
 
 // +kubebuilder:rbac:groups=talos.rtl.de,resources=nodes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=talos.rtl.de,resources=nodes/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=talos.rtl.de,resources=nodes/finalizers,verbs=update
 // +kubebuilder:rbac:groups=talos.rtl.de,resources=clusters,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=configmaps;secrets,verbs=get;list;watch
 // +kubebuilder:rbac:groups="events.k8s.io",resources=events,verbs=create;patch

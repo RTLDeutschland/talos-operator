@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fixed** Cluster resources (and Cluster secretRefs) lacking finalizers when active nodes are present.
 - **Fixed** Node reset ordering when all resources end up deleted (such as removal from Argo, namespace deletion, etc).
 - **Fixed** a bug in the Node reconcile which may overwrite a previous Provisioned = False status condition.
+- **Fixed** maintenance window logic triggering when the cluster was not yet bootstrapped.
 
 ## v1.0.2 - 2026-11-02
 

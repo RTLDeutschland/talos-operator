@@ -282,7 +282,11 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		cluster.Status.NextMaintenanceWindow.Before(new(metav1.Now()))
 	didLastClusterOperationCompleteSuccessfully := cluster.Operation == nil &&
 		(cluster.Status.Operation == nil || cluster.Status.Operation.Phase == ClusterOperationPhaseDone)
-	if inMaintenanceWindow && didLastClusterOperationCompleteSuccessfully {
+	isBootstrapped := meta.IsStatusConditionTrue(
+		cluster.Status.Conditions,
+		ClusterConditionBootstrapped,
+	)
+	if inMaintenanceWindow && didLastClusterOperationCompleteSuccessfully && isBootstrapped {
 		var op *talosv1alpha1.ClusterOperation
 		// if not all cluster nodes are in sync:
 		if meta.IsStatusConditionFalse(cluster.Status.Conditions, ClusterConditionNodesInSync) {

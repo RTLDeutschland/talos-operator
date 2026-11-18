@@ -24,6 +24,7 @@ import (
 	. "github.com/RTLDeutschland/talos-operator/internal/constants"
 	"github.com/RTLDeutschland/talos-operator/internal/keyedmutex"
 	"github.com/RTLDeutschland/talos-operator/internal/logz"
+	"github.com/samber/lo"
 )
 
 const (
@@ -314,11 +315,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	// if node isn't provisioned, set Ready false and exit early
-	// *unless* there's a reset in progress
-	resetInProgress := !r.isOperationComplete(node) &&
-		node.Status.Operation.Type == NodeOperationTypeReset
-	if !meta.IsStatusConditionTrue(node.Status.Conditions, NodeConditionProvisioned) &&
-		!resetInProgress {
+	if !meta.IsStatusConditionTrue(node.Status.Conditions, NodeConditionProvisioned) {
 		err := r.updateNodeStatus(ctx, func(n *talosv1alpha1.Node) {
 			meta.SetStatusCondition(&n.Status.Conditions, metav1.Condition{
 				Type:    NodeConditionProvisioned,
@@ -338,30 +335,6 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 		log.Info().Msg("Node is not provisioned, not requeueing")
 		return ctrl.Result{}, nil
-	}
-
-	// check if the Node was deleted but we need to perform cleanup
-	if r.isOperationComplete(node) && node.DeletionTimestamp != nil &&
-		slices.Contains(node.Finalizers, Finalizer) {
-		log.Info().Msg("Node deletion detected, starting reset operation and cleanup")
-		err := r.updateNodeStatus(ctx, func(n *talosv1alpha1.Node) {
-			n.Status.Operation = &talosv1alpha1.NodeOperationStatus{
-				NodeOperation: talosv1alpha1.NodeOperation{
-					Type: NodeOperationTypeReset,
-					// let the reset handler auto-detect graceful mode
-				},
-				Phase:              NodeOperationPhasePending,
-				Reason:             NodeOperationReasonNodeDeletionCleanup,
-				Message:            "Node deletion detected, performing cleanup operation",
-				LastTransitionTime: metav1.Now(),
-			}
-		})
-		if err != nil {
-			return ctrl.Result{}, fmt.Errorf(
-				"failed to update Node Operation status for deletion cleanup: %w",
-				err,
-			)
-		}
 	}
 
 	if err := ctx.Err(); err != nil {
@@ -394,6 +367,64 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err := ctx.Err(); err != nil {
 		log.Trace().Err(err).Msg("Context cancelled before main work")
 		return ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+	}
+
+	// run special logic for deletion if requested
+	if slices.Contains(node.Finalizers, Finalizer) && node.DeletionTimestamp != nil &&
+		r.isOperationComplete(node) {
+		// give it ten seconds to allow for sync with other deleted resources,
+		// so that we reset nodes in the correct order
+		if time.Since(node.DeletionTimestamp.Time) < 10*time.Second {
+			log.Info().Msg("Node deletion requested, delaying for sync with other resources")
+			return ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		}
+
+		allNodes, err := listEligibleNodes(r, ctx, cluster)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to list nodes for deletion sync: %w", err)
+		}
+		allNodes = lo.Filter(allNodes, func(n talosv1alpha1.Node, _ int) bool {
+			return n.DeletionTimestamp != nil
+		})
+		// find our index in the above slice
+		idx := -1
+		for i, n := range allNodes {
+			if n.Name == node.Name {
+				idx = i
+				break
+			}
+		}
+		if idx == -1 {
+			return ctrl.Result{}, fmt.Errorf("node %q not found in deletion queue?", node.Name)
+		}
+
+		// if there are nodes after us in the slice, wait for them to be deleted first
+		// (listEligibleNodes will only return nodes that are provisioned)
+		if len(allNodes) > idx+1 {
+			log.Info().Msg("Waiting our turn in the deletion queue...")
+			return ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		}
+
+		// okay, we are go to reset this node
+		log.Info().Msg("Node deletion detected, starting reset operation and cleanup")
+		err = r.updateNodeStatus(ctx, func(n *talosv1alpha1.Node) {
+			n.Status.Operation = &talosv1alpha1.NodeOperationStatus{
+				NodeOperation: talosv1alpha1.NodeOperation{
+					Type: NodeOperationTypeReset,
+					// let the reset handler auto-detect graceful mode
+				},
+				Phase:              NodeOperationPhasePending,
+				Reason:             NodeOperationReasonNodeDeletionCleanup,
+				Message:            "Node deletion detected, performing cleanup operation",
+				LastTransitionTime: metav1.Now(),
+			}
+		})
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf(
+				"failed to update Node Operation status for deletion cleanup: %w",
+				err,
+			)
+		}
 	}
 
 	if r.isOperationComplete(node) {

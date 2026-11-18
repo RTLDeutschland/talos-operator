@@ -232,7 +232,6 @@ func (r *NodeReconciler) handleNodeReset(
 			)
 
 			// try to delete node from Kubernetes cluster
-			err = nil
 			remoteClient, err := getKubernetesClient(ctx, r.Client, cluster)
 			if err == nil {
 				err = remoteClient.CoreV1().

@@ -13,9 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *NodeReconciler) handleNodeReset(
@@ -141,31 +139,11 @@ func (r *NodeReconciler) handleNodeReset(
 		} else if node.Spec.Role == Controlplane {
 			// auto-detect: if we're the last controlplane, don't attempt graceful reset
 			// since there's no etcd cluster to leave
-			nodes := &talosv1alpha1.NodeList{}
-			err := r.List(ctx, nodes, &client.ListOptions{
-				FieldSelector: fields.SelectorFromSet(fields.Set{
-					"spec.clusterRef": cluster.Name,
-					"spec.role":       Controlplane,
-				}),
-			})
+			nodes, err := listEligibleNodes(r, ctx, cluster, Controlplane)
 			if err != nil {
 				return nil, fmt.Errorf("failed to list controlplane nodes: %w", err)
 			}
-
-			// count other healthy controlplane nodes
-			healthyCount := 0
-			for _, otherNode := range nodes.Items {
-				if otherNode.Name == node.Name {
-					continue
-				}
-				// a node is considered healthy if it's not being deleted, has no ongoing operation, and is ready
-				if otherNode.DeletionTimestamp == nil && r.isOperationComplete(&otherNode) &&
-					meta.IsStatusConditionTrue(otherNode.Status.Conditions, NodeConditionReady) {
-					healthyCount++
-				}
-			}
-
-			if healthyCount == 0 {
+			if len(nodes) == 1 {
 				graceful = false
 			}
 		}
@@ -215,9 +193,7 @@ func (r *NodeReconciler) handleNodeReset(
 			(len(opStatus.Reset.SystemLabelsToWipe) == 0 || slices.Contains(opStatus.Reset.SystemLabelsToWipe, "STATE")) {
 
 			// remove finalizer to allow deletion
-			newFinalizers := lo.Filter(node.Finalizers, func(item string, index int) bool {
-				return item != Finalizer
-			})
+			newFinalizers := lo.Without(node.Finalizers, Finalizer)
 			err = r.updateNode(ctx, func(n *talosv1alpha1.Node) {
 				n.Finalizers = newFinalizers
 			})

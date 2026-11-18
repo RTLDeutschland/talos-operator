@@ -20,7 +20,7 @@ func (r *ClusterReconciler) handleRollingApplyOperation(
 	switch opStatus.Phase {
 	case ClusterOperationPhasePending:
 		// generate a plan
-		nodes, err := r.listEligibleNodes(ctx, cluster)
+		nodes, err := listEligibleNodes(r, ctx, cluster)
 		if err != nil {
 			return nil, err
 		}

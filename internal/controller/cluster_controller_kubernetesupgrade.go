@@ -29,12 +29,12 @@ func (r *ClusterReconciler) handleKubernetesUpgrade(
 
 	switch opStatus.Phase {
 	case ClusterOperationPhasePending:
-		controlPlaneNodes, err := r.listEligibleNodes(ctx, cluster, Controlplane)
+		controlPlaneNodes, err := listEligibleNodes(r, ctx, cluster, Controlplane)
 		if err != nil {
 			return nil, err
 		}
 
-		workerNodes, err := r.listEligibleNodes(ctx, cluster, Worker)
+		workerNodes, err := listEligibleNodes(r, ctx, cluster, Worker)
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +177,7 @@ func (r *ClusterReconciler) handleKubernetesUpgrade(
 		}
 
 	case ClusterOperationPhasePostflight:
-		controllerNodes, err := r.listEligibleNodes(ctx, cluster, Controlplane)
+		controllerNodes, err := listEligibleNodes(r, ctx, cluster, Controlplane)
 		if err != nil {
 			return nil, err
 		}

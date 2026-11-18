@@ -87,7 +87,8 @@ func (r *ClusterReconciler) updateClusterStatus(
 // within each role group.
 //
 // Pass an optional role (Controlplane or Worker) to restrict the query to that role only.
-func (r *ClusterReconciler) listEligibleNodes(
+func listEligibleNodes(
+	r client.Client,
 	ctx context.Context,
 	cluster *talosv1alpha1.Cluster,
 	role ...string,

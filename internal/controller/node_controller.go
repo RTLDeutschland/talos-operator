@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,7 +39,6 @@ const (
 type NodeReconciler struct {
 	client.Client
 	APIReader    client.Reader
-	Scheme       *runtime.Scheme
 	Recorder     events.EventRecorderLogger
 	Mutexes      *keyedmutex.MutexMap
 	FeatureFlags iapi.FeatureFlags

@@ -13,7 +13,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,7 +33,6 @@ const DefaultKubernetesVersion = "v" + constants.DefaultKubernetesVersion
 type ClusterReconciler struct {
 	client.Client
 	APIReader    client.Reader
-	Scheme       *runtime.Scheme
 	Recorder     events.EventRecorderLogger
 	Mutexes      *keyedmutex.MutexMap
 	FeatureFlags iapi.FeatureFlags
@@ -218,7 +216,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		autoBootstrapEnabled {
 		// check if we have at least one provisioned controlplane node,
 		// and verify all provisioned controlplanes have completed their Provision operation
-		controlplaneNodes, err := r.listEligibleNodes(ctx, cluster, Controlplane)
+		controlplaneNodes, err := listEligibleNodes(r, ctx, cluster, Controlplane)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf(
 				"error listing controlplane nodes for cluster %s: %w",

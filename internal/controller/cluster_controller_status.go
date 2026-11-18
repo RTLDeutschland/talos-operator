@@ -113,7 +113,7 @@ func (r *ClusterReconciler) updateStatus(
 	ctx context.Context,
 	cluster *talosv1alpha1.Cluster,
 ) error {
-	clusterNodes, err := r.listEligibleNodes(ctx, cluster)
+	clusterNodes, err := listEligibleNodes(r, ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("error listing nodes for cluster %s: %w", cluster.Name, err)
 	}

@@ -275,7 +275,6 @@ func runManager(options managerOptions) error {
 	if err := (&controller.ClusterReconciler{
 		Client:       mgr.GetClient(),
 		APIReader:    mgr.GetAPIReader(),
-		Scheme:       mgr.GetScheme(),
 		Mutexes:      mutexMap,
 		Recorder:     broadcaster.NewRecorder(mgr.GetScheme(), "talos-cluster-controller"),
 		FeatureFlags: options.featureFlags,
@@ -285,7 +284,6 @@ func runManager(options managerOptions) error {
 	if err := (&controller.NodeReconciler{
 		Client:       mgr.GetClient(),
 		APIReader:    mgr.GetAPIReader(),
-		Scheme:       mgr.GetScheme(),
 		Mutexes:      mutexMap,
 		Recorder:     broadcaster.NewRecorder(mgr.GetScheme(), "talos-node-controller"),
 		FeatureFlags: options.featureFlags,

@@ -35,7 +35,7 @@ func (r *ClusterReconciler) getFirstProvisionedControllerNode(
 	ctx context.Context,
 	cluster *talosv1alpha1.Cluster,
 ) (*talosv1alpha1.Node, error) {
-	nodes, err := r.listEligibleNodes(ctx, cluster, Controlplane)
+	nodes, err := listEligibleNodes(r, ctx, cluster, Controlplane)
 	if err != nil {
 		return nil, err
 	}

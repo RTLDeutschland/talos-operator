@@ -20,7 +20,7 @@ func (r *ClusterReconciler) handleBootstrapOperation(
 
 	switch opStatus.Phase {
 	case ClusterOperationPhasePending:
-		nodes, err := r.listEligibleNodes(ctx, cluster, Controlplane)
+		nodes, err := listEligibleNodes(r, ctx, cluster, Controlplane)
 		if err != nil {
 			return nil, err
 		}

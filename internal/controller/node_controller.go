@@ -317,12 +317,17 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	// if node isn't provisioned, set Ready false and exit early
 	if !meta.IsStatusConditionTrue(node.Status.Conditions, NodeConditionProvisioned) {
 		err := r.updateNodeStatus(ctx, func(n *talosv1alpha1.Node) {
-			meta.SetStatusCondition(&n.Status.Conditions, metav1.Condition{
-				Type:    NodeConditionProvisioned,
-				Status:  metav1.ConditionFalse,
-				Reason:  NodeConditionReasonNodeNotProvisioned,
-				Message: "Node is not yet provisioned",
+			hasProvisioned := lo.ContainsBy(n.Status.Conditions, func(c metav1.Condition) bool {
+				return c.Type == NodeConditionProvisioned
 			})
+			if !hasProvisioned {
+				meta.SetStatusCondition(&n.Status.Conditions, metav1.Condition{
+					Type:    NodeConditionProvisioned,
+					Status:  metav1.ConditionFalse,
+					Reason:  NodeConditionReasonNodeNotProvisioned,
+					Message: "Node is not yet provisioned",
+				})
+			}
 			meta.SetStatusCondition(&n.Status.Conditions, metav1.Condition{
 				Type:    NodeConditionReady,
 				Status:  metav1.ConditionFalse,

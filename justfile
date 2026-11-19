@@ -89,7 +89,7 @@ build-push-release:
     mkdir -p dist
     nix build -o dist/kubectl-talos .#kubectl-talos-crosscompile
     (cd dist/kubectl-talos/bin && sha256sum * ) > dist/SHA256SUMS
-    gh release upload -R github.com/RTLDeutschland/talos-operator "v$(cat VERSION)" dist/kubectl-talos/bin/* || true
+    gh release upload -R github.com/RTLDeutschland/talos-operator "v$(cat VERSION)" dist/kubectl-talos/bin/* dist/SHA256SUMS || true
 
     # build main image & chart
     nix run .#task-push-image-cross

@@ -23,7 +23,7 @@
 
       n2cPkgs = nix2container.packages.${system};
 
-      vendorHash = "sha256-zs58wsWto4Zn0ob25GQ3ACTyYCYK+zFl1O0imWlNjfg=";
+      vendorHash = "sha256-B54pPtTOgA3hNWsJm3vIcrmxSA2tOORKs8ogMk77lvU=";
       #vendorHash = lib.fakeHash; # for updating go.mod
       version = lib.strings.trim (builtins.readFile ./VERSION);
 

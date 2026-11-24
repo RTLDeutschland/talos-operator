@@ -1,16 +1,18 @@
 # Talos operator
 
-A talosctl-inspired Kubernetes operator for managing Talos clusters.
+![Talos version badge](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2FRTLDeutschland%2Ftalos-operator%2Frefs%2Fheads%2Fmain%2Fgo.mod&search=github%5C.com%2Fsiderolabs%2Ftalos%2Fpkg%2Fmachinery%20(v.*)&replace=%241&logo=Talos&label=Built%20against%20Talos&color=%23FF7300)
+![Kubernetes version badge](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2FRTLDeutschland%2Ftalos-operator%2Frefs%2Fheads%2Fmain%2Fgo.mod&search=k8s%5C.io%2Fapi%20v0%5C.(.*)&replace=v1.%241&logo=Kubernetes&label=Kubernetes&color=%23326CE5)
+![GitHub Release Date](https://img.shields.io/github/release-date/RTLDeutschland/talos-operator?link=https%3A%2F%2Fgithub.com%2FRTLDeutschland%2Ftalos-operator%2Freleases)
 
-Supporting versions: **Talos v1.12–v1.14**, **Kubernetes 1.34–1.37** (operator cluster)
+A talosctl-inspired Kubernetes operator for managing Talos clusters.
 
 ## Motivation
 
-talosctl is great, but there is large potential for human error. Some of this could be mitigated by using wrapper scripts and CI, but this often results in poor visibility.
+talosctl is great, but there is large potential for human error. Why not re-use your existing Kubernetes tooling like Argo CD to manage Talos clusters declaratively?
 
-The Talos operator aims to give cluster operators a single pane of glass to configure and maintain Talos clusters, declaratively, at a large scale.
+The Talos operator aims to give cluster operators a single dedicated place to manage configuration, patches, and day-to-day cluster operations such as upgrades and etcd backups. Moreover, all of this can be automated and made to run on a schedule.
 
-The operator also strives for safety and correctness in its maintenance logic, including Kubernetes drains. The operator respects things like PodDisruptionBudgets and fails early if they can't be met.
+The operator also strives for safety and correctness in its logic, including correct handling of node drains. It respects constraints like PodDisruptionBudgets and fails early if they can't be met.
 
 ## Features
 
@@ -44,6 +46,7 @@ spec:
       cron: "17 4 * * 2" # every Tuesday at 04:17 AM
       #cron: "0 * * * *" # permanent automatic reconciliation
     # ...
+    # etcdBackup, argoCDSecret, autoBootstrap, ...
   # patches: []
   # patchRefs: []
   # controlPlanePatches: []
@@ -100,11 +103,11 @@ and these conditions are what the maintenance window logic uses to determine whe
 Upgrading Talos and Kubernetes simultaneously is safe because RollingApply runs first, and upgrades the nodes first to a version that would
 then support the subsequent Kubernetes upgrade.
 
-#### Manual reconciliation as a default
+### Manual reconciliation as a default
 
 As shown above, changes to Node and Cluster objects do not reconcile automatically. This allows you to stage configuration changes for opportune times.
 
-### kubectl-talos
+## kubectl-talos
 
 A `kubectl-talos` kubectl plugin to interact with operator-managed clusters almost as transparently as you would an unmanaged cluster, e.g:
 

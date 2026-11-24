@@ -16,7 +16,6 @@ const (
 	EventReasonDeleted = "Deleted"
 
 	EventReasonValidationError = "ValidationError"
-	EventReasonSecurityError   = "SecurityError"
 )
 
 // Event actions, what we were doing when this event happened:

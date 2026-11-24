@@ -43,8 +43,28 @@ type ClusterEtcdBackup struct {
 	// +optional
 	Prefix string `json:"prefix,omitempty"`
 
-	// EncryptionAgeRecipients enables https://age-encryption.org/ of the snapshot file
-	// to the following list of recipients.
+	// Encryption defines the encryption configuration for etcd backups.
 	// +optional
-	EncryptionAgeRecipients []string `json:"encryptionAgeRecipients,omitempty"`
+	Encryption *ClusterEtcdBackupEncryption `json:"encryption,omitempty"`
+}
+
+// ClusterEtcdBackupEncryption defines the encryption configuration for etcd backups.
+type ClusterEtcdBackupEncryption struct {
+	// Enabled specifies whether encryption is enabled for etcd backups.
+	// +optional
+	// +kubebuilder:default=true
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Age configures https://age-encryption.org/ of the snapshot file.
+	// +required
+	Age *ClusterEtcdBackupEncryptionAge `json:"age,omitempty"`
+
+	// (required since it's the only option)
+}
+
+// ClusterEtcdBackupEncryptionAge configures https://age-encryption.org/ of the snapshot file.
+type ClusterEtcdBackupEncryptionAge struct {
+	// Recipients specifies the recipients to encrypt the snapshot file for.
+	// +required
+	Recipients []string `json:"recipients"`
 }

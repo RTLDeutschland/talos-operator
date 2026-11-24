@@ -21,14 +21,45 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/RTLDeutschland/talos-operator/api/v1alpha1/constants"
 )
+
+// eventAndSetCondition simultaneously records an event and creates a condition to be passed to meta.SetStatusCondition.
+func eventAndSetCondition(
+	recorder events.EventRecorder,
+	regarding client.Object,
+	eventType string,
+	eventAction string,
+	conditionType string,
+	reason string,
+	message string,
+	args ...any,
+) metav1.Condition {
+	message = fmt.Sprintf(message, args...)
+	recorder.Eventf(
+		regarding,
+		nil,
+		eventType,
+		reason,
+		eventAction,
+		message,
+	)
+	return metav1.Condition{
+		Type:               conditionType,
+		Status:             metav1.ConditionTrue,
+		Reason:             reason,
+		Message:            message,
+		LastTransitionTime: metav1.Now(),
+	}
+}
 
 // doEtcdBackup runs the actual etcd backup process.
 func (r *ClusterReconciler) doEtcdBackup(
@@ -45,15 +76,21 @@ func (r *ClusterReconciler) doEtcdBackup(
 
 	parsed, err := url.Parse(uploadCredentials.AWSEndpoint)
 	if err != nil {
-		r.Recorder.Eventf(
-			cluster,
-			nil,
-			corev1.EventTypeWarning,
-			EventReasonValidationError,
-			EventActionEtcdBackup,
-			"Failed to parse AWS endpoint: %v",
-			err,
-		)
+		err := r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+			meta.SetStatusCondition(&cl.Status.Conditions, eventAndSetCondition(
+				r.Recorder,
+				cl,
+				corev1.EventTypeWarning,
+				EventActionEtcdBackup,
+				ClusterConditionTypeEtcdBackupFailed,
+				ClusterEtcdBackupReasonValidationError,
+				"Failed to parse AWS endpoint: %v",
+				err,
+			))
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update cluster status: %v", err)
+		}
 		return nil, nil
 	}
 
@@ -67,15 +104,21 @@ func (r *ClusterReconciler) doEtcdBackup(
 		Secure: parsed.Scheme == "https",
 	})
 	if err != nil {
-		r.Recorder.Eventf(
-			cluster,
-			nil,
-			corev1.EventTypeWarning,
-			EventReasonValidationError,
-			EventActionEtcdBackup,
-			"Failed to create S3 client: %v",
-			err,
-		)
+		err := r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+			meta.SetStatusCondition(&cl.Status.Conditions, eventAndSetCondition(
+				r.Recorder,
+				cl,
+				corev1.EventTypeWarning,
+				EventActionEtcdBackup,
+				ClusterConditionTypeEtcdBackupFailed,
+				ClusterEtcdBackupReasonValidationError,
+				"Failed to create S3 client: %v",
+				err,
+			))
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update cluster status: %v", err)
+		}
 		return nil, nil
 	}
 
@@ -88,15 +131,21 @@ func (r *ClusterReconciler) doEtcdBackup(
 		minio.StatObjectOptions{},
 	)
 	if err != nil && minio.IsNetworkOrHostDown(err, false) {
-		r.Recorder.Eventf(
-			cluster,
-			nil,
-			corev1.EventTypeWarning,
-			EventReasonFailed,
-			EventActionEtcdBackup,
-			"Failed to reach S3 endpoint: %v",
-			err,
-		)
+		err := r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+			meta.SetStatusCondition(&cl.Status.Conditions, eventAndSetCondition(
+				r.Recorder,
+				cl,
+				corev1.EventTypeWarning,
+				EventActionEtcdBackup,
+				ClusterConditionTypeEtcdBackupFailed,
+				ClusterEtcdBackupReasonS3ConnectFailed,
+				"Failed to reach S3 endpoint: %v",
+				err,
+			))
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update cluster status: %v", err)
+		}
 		return nil, nil
 	}
 
@@ -121,24 +170,58 @@ func (r *ClusterReconciler) doEtcdBackup(
 	var fnSuffix string // file name suffix without .snap (prefixed later)
 	var ageCloser io.Closer = nil
 	var localWriter io.Writer = file
-	if len(backupConfig.EncryptionAgeRecipients) > 0 {
+
+	encryptionConfig := ptr.Deref(
+		backupConfig.Encryption,
+		talosv1alpha1.ClusterEtcdBackupEncryption{Enabled: new(false)},
+	)
+	encryptionEnabled := ptr.Deref(
+		encryptionConfig.Enabled,
+		true,
+	) // field default is true, if block unset then false
+	ageConfig := ptr.Deref(encryptionConfig.Age, talosv1alpha1.ClusterEtcdBackupEncryptionAge{})
+	if encryptionEnabled {
+		if len(ageConfig.Recipients) == 0 {
+			// TODO(webhook): if we ever add a validating webhook, validate this.
+			err := r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+				meta.SetStatusCondition(&cl.Status.Conditions, eventAndSetCondition(
+					r.Recorder,
+					cl,
+					corev1.EventTypeWarning,
+					EventActionEtcdBackup,
+					ClusterConditionTypeEtcdBackupFailed,
+					ClusterEtcdBackupReasonValidationError,
+					"Encryption was requested but no age recipients were specified",
+				))
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to update cluster status: %v", err)
+			}
+			return nil, nil
+		}
+
 		buf := new(bytes.Buffer)
-		for _, rString := range backupConfig.EncryptionAgeRecipients {
+		for _, rString := range ageConfig.Recipients {
 			buf.WriteString(rString)
 			buf.WriteString("\n")
 		}
-
 		recipients, err := age.ParseRecipients(buf)
 		if err != nil {
-			r.Recorder.Eventf(
-				cluster,
-				nil,
-				corev1.EventTypeWarning,
-				EventReasonValidationError,
-				EventActionEtcdBackup,
-				"Failed to parse age recipients: %v",
-				err,
-			)
+			err := r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+				meta.SetStatusCondition(&cl.Status.Conditions, eventAndSetCondition(
+					r.Recorder,
+					cl,
+					corev1.EventTypeWarning,
+					EventActionEtcdBackup,
+					ClusterConditionTypeEtcdBackupFailed,
+					ClusterEtcdBackupReasonValidationError,
+					"Failed to parse age recipients: %v",
+					err,
+				))
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to update cluster status: %v", err)
+			}
 			return nil, nil
 		}
 
@@ -253,15 +336,21 @@ func (r *ClusterReconciler) doEtcdBackup(
 		minio.PutObjectOptions{},
 	)
 	if err != nil {
-		r.Recorder.Eventf(
-			cluster,
-			nil,
-			corev1.EventTypeWarning,
-			EventReasonFailed,
-			EventActionEtcdBackup,
-			"Failed to upload etcd snapshot to S3: %v (will retry)",
-			err,
-		)
+		err := r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+			meta.SetStatusCondition(&cl.Status.Conditions, eventAndSetCondition(
+				r.Recorder,
+				cl,
+				corev1.EventTypeWarning,
+				EventActionEtcdBackup,
+				ClusterConditionTypeEtcdBackupFailed,
+				ClusterEtcdBackupReasonS3UploadFailed,
+				"Failed to upload etcd snapshot to S3: %v",
+				err,
+			))
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update cluster status: %v", err)
+		}
 		return nil, nil
 	}
 
@@ -279,8 +368,9 @@ func (r *ClusterReconciler) doEtcdBackup(
 		(nfActualMB * 100 / nfCopiedMB),
 	)
 
-	err = r.updateClusterStatus(ctx, func(c *talosv1alpha1.Cluster) {
-		c.Status.LastSuccessfulEtcdBackup = &metav1.Time{Time: time.Now()}
+	err = r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+		cl.Status.LastSuccessfulEtcdBackup = &metav1.Time{Time: time.Now()}
+		meta.RemoveStatusCondition(&cl.Status.Conditions, ClusterConditionTypeEtcdBackupFailed)
 	})
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -304,11 +394,10 @@ func (r *ClusterReconciler) reconcileEtcdBackups(
 		return nil, nil
 	}
 
-	if cluster.Spec.Options.EtcdBackup == nil {
-		return nil, nil
-	}
-
-	backupConfig := ptr.Deref(cluster.Spec.Options.EtcdBackup, talosv1alpha1.ClusterEtcdBackup{})
+	backupConfig := ptr.Deref(
+		cluster.Spec.Options.EtcdBackup,
+		talosv1alpha1.ClusterEtcdBackup{Enabled: new(false)},
+	)
 	enabled := ptr.Deref(backupConfig.Enabled, true) // if the block is set, default to true
 	if !enabled {
 		return nil, nil
@@ -317,15 +406,21 @@ func (r *ClusterReconciler) reconcileEtcdBackups(
 	backupIntervalString := lo.CoalesceOrEmpty(backupConfig.Interval, "4h")
 	backupInterval, err := time.ParseDuration(backupIntervalString)
 	if err != nil {
-		r.Recorder.Eventf(
-			cluster,
-			nil,
-			corev1.EventTypeWarning,
-			EventReasonValidationError,
-			EventActionEtcdBackup,
-			"Invalid etcd backup interval: %v",
-			err,
-		)
+		err := r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+			meta.SetStatusCondition(&cl.Status.Conditions, eventAndSetCondition(
+				r.Recorder,
+				cl,
+				corev1.EventTypeWarning,
+				EventActionEtcdBackup,
+				ClusterConditionTypeEtcdBackupFailed,
+				ClusterEtcdBackupReasonValidationError,
+				"Invalid etcd backup interval: %v",
+				err,
+			))
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update cluster status: %w", err)
+		}
 		return nil, nil
 	}
 	lastSuccessfulEtcdBackup := ptr.Deref(
@@ -348,14 +443,20 @@ func (r *ClusterReconciler) reconcileEtcdBackups(
 	if !r.FeatureFlags.EnableCrossNamespaceBackupCredentialsRefs &&
 		backupConfig.CredentialsSecretRef.Namespace != "" &&
 		backupConfig.CredentialsSecretRef.Namespace != cluster.Namespace {
-		r.Recorder.Eventf(
-			cluster,
-			nil,
-			corev1.EventTypeWarning,
-			EventReasonSecurityError,
-			EventActionEtcdBackup,
-			"Cross-namespace backup credentials references are not allowed",
-		)
+		err := r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+			meta.SetStatusCondition(&cl.Status.Conditions, eventAndSetCondition(
+				r.Recorder,
+				cl,
+				corev1.EventTypeWarning,
+				EventActionEtcdBackup,
+				ClusterConditionTypeEtcdBackupFailed,
+				ClusterEtcdBackupReasonSecurityError,
+				"Cross-namespace backup credentials references are not allowed",
+			))
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update cluster status: %w", err)
+		}
 		return nil, nil
 	}
 
@@ -369,15 +470,21 @@ func (r *ClusterReconciler) reconcileEtcdBackups(
 		Name: backupConfig.CredentialsSecretRef.Name,
 	}, secret)
 	if err != nil {
-		r.Recorder.Eventf(
-			cluster,
-			nil,
-			corev1.EventTypeWarning,
-			EventReasonValidationError,
-			EventActionEtcdBackup,
-			"Failed to fetch backup credentials secret: %v",
-			err,
-		)
+		err := r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+			meta.SetStatusCondition(&cl.Status.Conditions, eventAndSetCondition(
+				r.Recorder,
+				cl,
+				corev1.EventTypeWarning,
+				EventActionEtcdBackup,
+				ClusterConditionTypeEtcdBackupFailed,
+				ClusterEtcdBackupReasonValidationError,
+				"Failed to fetch backup credentials secret: %v",
+				err,
+			))
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update cluster status: %w", err)
+		}
 		return nil, nil
 	}
 
@@ -388,28 +495,40 @@ func (r *ClusterReconciler) reconcileEtcdBackups(
 	}
 	err = mapstructure.Decode(stringData, uploadCredentials)
 	if err != nil {
-		r.Recorder.Eventf(
-			cluster,
-			nil,
-			corev1.EventTypeWarning,
-			EventReasonValidationError,
-			EventActionEtcdBackup,
-			"Failed to decode backup credentials secret: %v",
-			err,
-		)
+		err := r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+			meta.SetStatusCondition(&cl.Status.Conditions, eventAndSetCondition(
+				r.Recorder,
+				cl,
+				corev1.EventTypeWarning,
+				EventActionEtcdBackup,
+				ClusterConditionTypeEtcdBackupFailed,
+				ClusterEtcdBackupReasonValidationError,
+				"Failed to decode backup credentials secret: %v",
+				err,
+			))
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update cluster status: %w", err)
+		}
 		return nil, nil
 	}
 
 	if uploadCredentials.AWSAccessKeyID == "" || uploadCredentials.AWSSecretAccessKey == "" ||
 		uploadCredentials.AWSS3Bucket == "" {
-		r.Recorder.Eventf(
-			cluster,
-			nil,
-			corev1.EventTypeWarning,
-			EventReasonValidationError,
-			EventActionEtcdBackup,
-			"Incomplete backup credentials, missing access key, secret key, or S3 bucket",
-		)
+		err := r.updateClusterStatus(ctx, func(cl *talosv1alpha1.Cluster) {
+			meta.SetStatusCondition(&cl.Status.Conditions, eventAndSetCondition(
+				r.Recorder,
+				cl,
+				corev1.EventTypeWarning,
+				EventActionEtcdBackup,
+				ClusterConditionTypeEtcdBackupFailed,
+				ClusterEtcdBackupReasonValidationError,
+				"Incomplete backup credentials, missing access key, secret key, or S3 bucket",
+			))
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update cluster status: %w", err)
+		}
 		return nil, nil
 	}
 

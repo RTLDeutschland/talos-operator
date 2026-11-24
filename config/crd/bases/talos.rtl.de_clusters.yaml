@@ -190,13 +190,31 @@ spec:
                         default: true
                         description: Enabled will enable the etcd backups feature.
                         type: boolean
-                      encryptionAgeRecipients:
-                        description: |-
-                          EncryptionAgeRecipients enables https://age-encryption.org/ of the snapshot file
-                          to the following list of recipients.
-                        items:
-                          type: string
-                        type: array
+                      encryption:
+                        description: Encryption defines the encryption configuration
+                          for etcd backups.
+                        properties:
+                          age:
+                            description: Age configures https://age-encryption.org/
+                              of the snapshot file.
+                            properties:
+                              recipients:
+                                description: Recipients specifies the recipients to
+                                  encrypt the snapshot file for.
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - recipients
+                            type: object
+                          enabled:
+                            default: true
+                            description: Enabled specifies whether encryption is enabled
+                              for etcd backups.
+                            type: boolean
+                        required:
+                        - age
+                        type: object
                       interval:
                         description: |-
                           Interval specifies how often etcd backups should be performed, in duration format (e.g., "30m", "1h").

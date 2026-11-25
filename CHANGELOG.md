@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Compresses backups using a Go implementation of zstd.
 - Supports optional https://age-encryption.org of backup files.
 
+### Remaining changes
+
+- **Uppdated** various dependencies, including Talos v1.14.7 and Go to v1.27.3.
+
 #### Thanks
 
 Thanks to [@klauspost](https://github.com/klauspost) for the zstd implementation.

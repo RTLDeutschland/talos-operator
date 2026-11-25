@@ -15,17 +15,18 @@ For example:
 helm install talos-operator oci://ghcr.io/rtldeutschland/talos-operator/helm/talos-operator \
   --version 1.1.0 \
   --namespace talos-operator-system \
-  --create-namespace \
-  --set image.repository=ghcr.io/rtldeutschland/talos-operator
+  --create-namespace # \
+  # --set image.repository=git.sapphiccode.net/sapphiccode/talos-operator
 ```
 
 Helm chart versions should directly correspond to the Talos operator version they are intended to deploy. This can be overridden with `image.tag`. Image tags are `v`-prefixed.
 
 ## Useful values
 
-- `features.enableNodeLabel` controls `--enable-node-label`
-- `features.enableCrossNamespacePatchRefs` controls `--enable-cross-namespace-patch-refs`
-- `features.enablePProf` controls `--enable-pprof`
+- `features.enableNodeLabel`: (default true), Enables automatic `rtl.de/cluster-name` node label for all managed Kubernetes nodes.
+- `features.enableCrossNamespacePatchRefs`: (default true), Allows operator users to reference patches in other namespaces from Node and Cluster resources via `patchRefs`.
+- `features.enableCrossNamespaceBackupCredentialsRef` (default true), Allows operator users to reference etcd backup credentials (S3 credentials) in other namespaces than the current Cluster resource's namespace.
+- `features.enablePProf` (default false), for memory profiling and debugging.
 
 Example:
 

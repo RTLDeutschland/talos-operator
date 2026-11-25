@@ -63,27 +63,36 @@ metadata:
 #  annotations:  key: string
 #  labels:  key: string
 spec:
-#  controlPlanePatchRefs:
-#    - key: string
-#      name: string
-#      namespace: string
-#  controlPlanePatches:
-#    - string
-#  domain: string
-#  kubernetesVersion: string
-#  patchRefs:
-#    - key: string
-#      name: string
-#      namespace: string
-#  patches:
-#    - string
-#  secretsRef: string
-#  workerPatchRefs:
-#    - key: string
-#      name: string
-#      namespace: string
-#  workerPatches:
-#    - string
+  # controlPlanePatchRefs:
+  #   - key: string
+  #     name: string
+  #     namespace: string
+  # controlPlanePatches:
+  #   - string
+  # domain: string
+  # kubernetesVersion: string
+  # patchRefs:
+  #   - key: string
+  #     name: string
+  #     namespace: string
+  patches:
+    - |
+      # proxmox install example (assumes the entire cluster runs on proxmox)
+      apiVersion: v1alpha1
+      kind: UnattendedInstallConfig
+      installer:
+        image: factory.talos.dev/nocloud-installer-secureboot/17bd088c71807ae797c16e85efb133b27814f1a333312bf597c3d4bc6f7c13d7:v1.14.7
+      provisioning:
+        diskSelector:
+          match: disk.dev_path == "/dev/sda"
+        wipe: true
+  # secretsRef: string
+  # workerPatchRefs:
+  #   - key: string
+  #     name: string
+  #     namespace: string
+  # workerPatches:
+  #   - string
 ```
 
 ```yaml

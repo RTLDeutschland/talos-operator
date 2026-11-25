@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Remaining changes
 
-- **Uppdated** various dependencies, including Talos v1.14.7 and Go to v1.27.3.
+- **Updated** various dependencies, including Talos v1.14.7 and Go to v1.27.3.
 
 #### Thanks
 

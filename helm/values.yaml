@@ -54,7 +54,7 @@ metrics:
 resources:
   limits:
     cpu: 500m
-    memory: 128Mi
+    memory: 512Mi # etcd backups on /tmp count towards memory usage
   requests:
     cpu: 10m
     memory: 64Mi

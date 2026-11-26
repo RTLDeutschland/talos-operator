@@ -13,7 +13,7 @@ For example:
 
 ```sh
 helm install talos-operator oci://ghcr.io/rtldeutschland/talos-operator/helm/talos-operator \
-  --version 1.1.0 \
+  --version 1.1.1 \
   --namespace talos-operator-system \
   --create-namespace # \
   # --set image.repository=git.sapphiccode.net/sapphiccode/talos-operator

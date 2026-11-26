@@ -299,7 +299,7 @@ func (r *ClusterReconciler) doEtcdBackup(
 	nfCopiedMB := float64(nCopied) / (1024 * 1024)
 	nfActualMB := float64(nActual) / (1024 * 1024)
 	log.Debug().
-		Msgf("File size after compression/encryption: %.1f MB -> %.1f MB (compression ratio %.1f%%)",
+		Msgf("File size after compression/encryption: %.1f MiB -> %.1f MiB (compression ratio %.1f%%)",
 			nfCopiedMB,
 			nfActualMB,
 			(nfActualMB * 100 / nfCopiedMB),
@@ -361,7 +361,7 @@ func (r *ClusterReconciler) doEtcdBackup(
 		corev1.EventTypeNormal,
 		EventReasonCreated,
 		EventActionEtcdBackup,
-		"Successfully created etcd snapshot in S3: %s/%s (%.1f MB, compression ratio %.1f%%)",
+		"Successfully created etcd snapshot in S3: %s/%s (%.1f MiB, compression ratio %.1f%%)",
 		info.Bucket,
 		info.Key,
 		nfActualMB,

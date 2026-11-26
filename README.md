@@ -6,6 +6,8 @@
 
 A talosctl-inspired Kubernetes operator for managing Talos clusters.
 
+The Talos operator is in production use at RTL and manages over a dozen clusters, each with at least six nodes.
+
 ## Motivation
 
 talosctl is great, but there is large potential for human error. Why not re-use your existing Kubernetes tooling like Argo CD to manage Talos clusters declaratively?

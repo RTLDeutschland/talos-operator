@@ -378,7 +378,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	if r.isOperationComplete(cluster) {
 		// operation is done, exit early
-		return ctrl.Result{RequeueAfter: defaultRefreshInterval()}, nil
+		return ctrl.Result{RequeueAfter: Requeue60s()}, nil
 	}
 
 	// run cluster operations
@@ -407,7 +407,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return *res, nil
 	}
 
-	return ctrl.Result{RequeueAfter: defaultRefreshInterval()}, nil
+	return ctrl.Result{RequeueAfter: Requeue60s()}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -44,7 +44,7 @@ func sha256Sum(data []byte) string {
 	return hex.EncodeToString(w.Sum(nil))
 }
 
-// defaultRefreshInterval returns a 60 + jitter seconds duration for requeueing.
-func defaultRefreshInterval() time.Duration {
+// Requeue60s returns a 60 + jitter seconds duration for requeueing.
+func Requeue60s() time.Duration {
 	return 60*time.Second + time.Duration(rand.Float64()*float64(2*time.Second))
 }

@@ -427,7 +427,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if r.isOperationComplete(node) {
 		// operation is done, exit early
 		log.Trace().Msg("No ongoing operation, requeueing at default polling interval")
-		return ctrl.Result{RequeueAfter: defaultRefreshInterval()}, nil
+		return ctrl.Result{RequeueAfter: Requeue60s()}, nil
 	}
 	switch node.Status.Operation.Type {
 	case NodeOperationTypeProvision: // no-op, just in case
@@ -473,7 +473,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	log.Info().Msg("Node reconciliation successful after operation, requeuing at polling interval")
-	return ctrl.Result{RequeueAfter: defaultRefreshInterval()}, nil
+	return ctrl.Result{RequeueAfter: Requeue60s()}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

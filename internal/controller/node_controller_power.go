@@ -36,14 +36,14 @@ func (r *NodeReconciler) handleNodePower(
 		return nil, fmt.Errorf("error checking for other operations in progress: %w", err)
 	}
 	if otherOpsInProgress {
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 
 	mutex := r.Mutexes.For(cluster.Namespace + ":" + cluster.Name)
 	hasMutex := mutex.TryLock()
 	if !hasMutex {
 		// another operation is ongoing for this cluster
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 	defer mutex.Unlock()
 
@@ -82,7 +82,7 @@ func (r *NodeReconciler) handleNodePower(
 			if err != nil {
 				return nil, err
 			}
-			return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+			return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 		}
 
 		// just do it
@@ -188,7 +188,7 @@ func (r *NodeReconciler) handleNodePower(
 			return nil, nil
 		}
 		if !r.hasNodeRebootedYet(tCtx, talosClient, remoteClient, node) {
-			return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+			return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 		}
 
 		// uncordon the node
@@ -218,5 +218,5 @@ func (r *NodeReconciler) handleNodePower(
 		}
 	}
 
-	return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+	return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 }

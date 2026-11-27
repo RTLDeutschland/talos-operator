@@ -170,5 +170,5 @@ func (r *ClusterReconciler) handleBootstrapOperation(
 		)
 	}
 
-	return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+	return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 }

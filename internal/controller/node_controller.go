@@ -27,13 +27,6 @@ import (
 	"github.com/samber/lo"
 )
 
-const (
-	// Requeue durations for async operations
-	RequeueImmediate     = 1 * time.Second  // Immediate requeue for next step in a multi-step operation
-	RequeueShortDelay    = 5 * time.Second  // Fast polling for quick operations
-	RequeueStandardDelay = 10 * time.Second // Standard polling for most operations
-)
-
 // NodeReconciler reconciles a Node object by managing its lifecycle and operations.
 // It handles provisioning, bootstrapping, configuration application, and various
 // node operations such as reboot, shutdown, reset, and Kubernetes component upgrades.
@@ -298,7 +291,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	// WORK BEGINS HERE
 	if err := ctx.Err(); err != nil {
 		log.Trace().Err(err).Msg("Context cancelled before initial work")
-		return ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+		return ctrl.Result{RequeueAfter: Requeue1s}, nil
 	}
 
 	// provision the node from maintenance mode if needed
@@ -343,7 +336,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	if err := ctx.Err(); err != nil {
 		log.Trace().Err(err).Msg("Context cancelled before status work")
-		return ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+		return ctrl.Result{RequeueAfter: Requeue1s}, nil
 	}
 
 	// figure out if node config is in sync with expected config
@@ -361,7 +354,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		return ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+		return ctrl.Result{RequeueAfter: Requeue10s}, nil
 	}
 	if res != nil {
 		log.Trace().Dur("requeue_after", res.RequeueAfter).Msg("Node status check requeued")
@@ -370,7 +363,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	if err := ctx.Err(); err != nil {
 		log.Trace().Err(err).Msg("Context cancelled before main work")
-		return ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+		return ctrl.Result{RequeueAfter: Requeue1s}, nil
 	}
 
 	// run special logic for deletion if requested
@@ -380,7 +373,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		// so that we reset nodes in the correct order
 		if time.Since(node.DeletionTimestamp.Time) < 10*time.Second {
 			log.Info().Msg("Node deletion requested, delaying for sync with other resources")
-			return ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+			return ctrl.Result{RequeueAfter: Requeue5s}, nil
 		}
 
 		allNodes, err := listEligibleNodes(r, ctx, cluster)
@@ -406,7 +399,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		// (listEligibleNodes will only return nodes that are provisioned)
 		if len(allNodes) > idx+1 {
 			log.Info().Msg("Waiting our turn in the deletion queue...")
-			return ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+			return ctrl.Result{RequeueAfter: Requeue5s}, nil
 		}
 
 		// okay, we are go to reset this node
@@ -470,7 +463,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		Logger()
 	if err != nil {
 		log.Err(err).Msg("Error during node operation, requeueing")
-		return ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 	if res != nil {
 		log.Trace().

@@ -119,7 +119,7 @@ func (r *NodeReconciler) handleNodeProvisioning(
 			if err != nil {
 				return nil, err
 			}
-			return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+			return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 		}
 
 		r.Recorder.Eventf(
@@ -189,7 +189,7 @@ func (r *NodeReconciler) handleNodeProvisioning(
 					err,
 				)
 			}
-			return &reconcile.Result{RequeueAfter: RequeueStandardDelay}, nil
+			return &reconcile.Result{RequeueAfter: Requeue10s}, nil
 		}
 
 		// assemble the config and send it
@@ -257,7 +257,7 @@ func (r *NodeReconciler) handleNodeProvisioning(
 				)
 			}
 
-			return &reconcile.Result{RequeueAfter: RequeueStandardDelay}, nil
+			return &reconcile.Result{RequeueAfter: Requeue10s}, nil
 		}
 
 		err = r.updateNodeStatus(ctx, func(n *talosv1alpha1.Node) {
@@ -409,5 +409,5 @@ func (r *NodeReconciler) handleNodeProvisioning(
 		)
 	}
 
-	return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+	return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 }

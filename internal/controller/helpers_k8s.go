@@ -188,7 +188,7 @@ func (r *NodeReconciler) doNodeDrain(
 		if err != nil {
 			return nil, fmt.Errorf("failed to update node operation status: %w", err)
 		}
-		return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 	}
 
 	// check if timeout expired
@@ -224,7 +224,7 @@ func (r *NodeReconciler) doNodeDrain(
 		if err != nil {
 			return nil, fmt.Errorf("failed to update node operation status: %w", err)
 		}
-		return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 	}
 
 	// create the drain helper with a very conservative timeout, since we'll just requeue if it takes too long
@@ -236,12 +236,12 @@ func (r *NodeReconciler) doNodeDrain(
 	k8sNode, err := remoteClient.CoreV1().Nodes().Get(ctx, node.GetShortName(), metav1.GetOptions{})
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get node from kubernetes for cordon")
-		return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 	}
 	err = drain.RunCordonOrUncordon(drainHelper, k8sNode, true)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to cordon node")
-		return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 	}
 	log.Debug().Msg("node cordoned successfully")
 
@@ -259,7 +259,7 @@ func (r *NodeReconciler) doNodeDrain(
 		for _, err := range errors {
 			log.Error().Err(err).Msg("failed to get pods for deletion")
 		}
-		return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 	}
 	pods := podList.Pods()
 	log.Debug().Int("pods.count", len(pods)).Msg("found pods for deletion")
@@ -304,7 +304,7 @@ func (r *NodeReconciler) doNodeDrain(
 	}
 	if !ok {
 		log.Info().Msg("some pods failed to evict, requeuing")
-		return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 	}
 
 	// if we reach here, all pods have been evicted successfully, so we proceed with the next phase
@@ -318,7 +318,7 @@ func (r *NodeReconciler) doNodeDrain(
 	if err != nil {
 		return nil, fmt.Errorf("failed to update node operation status: %w", err)
 	}
-	return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+	return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 }
 
 // hasNodeRebootedYet checks whether the given node has rebooted and become Ready in Kubernetes, given it was already Ready before.

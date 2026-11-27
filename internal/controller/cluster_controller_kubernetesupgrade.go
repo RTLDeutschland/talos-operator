@@ -306,5 +306,5 @@ func (r *ClusterReconciler) handleKubernetesUpgrade(
 		}
 	}
 
-	return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+	return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 }

@@ -87,7 +87,7 @@ func (r *NodeReconciler) reconcileNodeStatus(
 				err,
 			)
 		}
-		return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 	}
 
 	// init shared talos client for node
@@ -207,7 +207,7 @@ func (r *NodeReconciler) reconcileNodeStatus(
 				updateErr,
 			)
 		}
-		return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 	}
 	if configuredSchematicID != "" && configuredSchematicID != talosSchematicID {
 		logger.V(1).

@@ -131,5 +131,5 @@ func (r *ClusterReconciler) handleRollingApplyOperation(
 		}
 	}
 
-	return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+	return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 }

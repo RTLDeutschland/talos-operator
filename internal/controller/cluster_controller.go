@@ -133,7 +133,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		return ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 
 	// generate a secret if secretsRef points to a secret that doesn't exist
@@ -345,7 +345,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					err,
 				)
 			}
-			return ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+			return ctrl.Result{RequeueAfter: Requeue5s}, nil
 		}
 	}
 
@@ -376,7 +376,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, fmt.Errorf("failed to clear Cluster Operation: %w", err)
 		}
 
-		return ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 
 	if r.isOperationComplete(cluster) {

@@ -96,5 +96,5 @@ func (r *ClusterReconciler) handleRollingRebootOperation(
 		}
 	}
 
-	return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+	return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 }

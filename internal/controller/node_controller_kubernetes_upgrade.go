@@ -37,7 +37,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 		return nil, fmt.Errorf("error checking for other operations in progress: %w", err)
 	}
 	if otherOpsInProgress {
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 
 	// grab a mutex
@@ -45,7 +45,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 	hasMutex := mutex.TryLock()
 	if !hasMutex {
 		// another operation is ongoing for this cluster
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 	defer mutex.Unlock()
 
@@ -357,7 +357,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 				return nil, nil
 			}
 
-			return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+			return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 		}
 
 		err = r.updateOpStatus(
@@ -454,7 +454,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 					Err(err).
 					Str("pod", podName).
 					Msg("Failed to get pod in remote for verification, requeueing")
-				return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+				return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 			}
 
 			// wait until the pod has the target image and is ready
@@ -471,7 +471,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 					Str("pod", podName).
 					Str("targetImage", targetImage).
 					Msg("Waiting for pod to have target image")
-				return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+				return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 			}
 
 			var ready bool = false
@@ -486,7 +486,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 				log.Debug().
 					Str("pod", podName).
 					Msg("Waiting for pod to be ready after image update")
-				return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+				return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 			}
 		}
 
@@ -501,7 +501,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 				log.Debug().
 					Err(err).
 					Msg("Failed to get node in remote for verification, requeueing")
-				return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+				return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 			}
 
 			_, kubeletImageTag, ok := strings.Cut(targetImage, ":")
@@ -526,7 +526,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 					Str("current", kubeletVersion).
 					Str("target", kubeletImageTag).
 					Msg("Waiting for kubelet version to match target")
-				return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+				return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 			}
 		}
 
@@ -551,7 +551,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 		if !ready {
 			// requeue and wait
 			log.Debug().Msg("Waiting for node to be ready after Kubernetes component upgrade")
-			return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+			return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 		}
 
 		// remember to uncordon the node (if we cordoned it)
@@ -572,7 +572,7 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 				)
 				// requeue and try again
 				log.Debug().Err(err).Msg("Failed to uncordon node, requeueing")
-				return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+				return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 			}
 		}
 
@@ -601,5 +601,5 @@ func (r *NodeReconciler) handleKubernetesComponentUpgrade(
 		}
 	}
 
-	return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+	return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 }

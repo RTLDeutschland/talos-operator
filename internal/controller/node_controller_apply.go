@@ -61,14 +61,14 @@ func (r *NodeReconciler) handleNodeApply(
 		return nil, fmt.Errorf("error checking for other operations in progress: %w", err)
 	}
 	if otherOpsInProgress {
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 
 	mutex := r.Mutexes.For(cluster.Namespace + ":" + cluster.Name)
 	hasMutex := mutex.TryLock()
 	if !hasMutex {
 		// another operation is ongoing for this cluster
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 	defer mutex.Unlock()
 
@@ -99,7 +99,7 @@ func (r *NodeReconciler) handleNodeApply(
 	talosVersion, talosSchematicID, err := getNodeTalosRelease(tCtx, talosClient)
 	if err != nil {
 		log.Info().Err(err).Msg("failed to get node Talos release, requeueing")
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 
 	// parse desired install image / schematic
@@ -249,7 +249,7 @@ func (r *NodeReconciler) handleNodeApply(
 				if err != nil {
 					return nil, fmt.Errorf("failed to update operation phase: %w", err)
 				}
-				return &ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+				return &ctrl.Result{RequeueAfter: Requeue1s}, nil
 			}
 		}
 
@@ -331,7 +331,7 @@ func (r *NodeReconciler) handleNodeApply(
 
 		// has node rebooted yet?
 		if !r.hasNodeRebootedYet(tCtx, talosClient, remoteClient, node) {
-			return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+			return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 		}
 
 		// check if node is Ready in k8s:
@@ -357,7 +357,7 @@ func (r *NodeReconciler) handleNodeApply(
 				}
 			}
 			if !ready {
-				return &ctrl.Result{RequeueAfter: RequeueStandardDelay}, nil
+				return &ctrl.Result{RequeueAfter: Requeue10s}, nil
 			}
 		}
 
@@ -409,5 +409,5 @@ func (r *NodeReconciler) handleNodeApply(
 		)
 	}
 
-	return &ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+	return &ctrl.Result{RequeueAfter: Requeue1s}, nil
 }

@@ -32,7 +32,7 @@ func (r *NodeReconciler) handleNodeBootstrap(
 		return nil, fmt.Errorf("error checking for other operations in progress: %w", err)
 	}
 	if otherOpsInProgress {
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 
 	opStatus := node.Status.Operation
@@ -118,5 +118,5 @@ func (r *NodeReconciler) handleNodeBootstrap(
 		)
 	}
 
-	return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+	return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 }

@@ -37,14 +37,14 @@ func (r *NodeReconciler) handleNodeReset(
 		return nil, fmt.Errorf("error checking for other operations in progress: %w", err)
 	}
 	if otherOpsInProgress {
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 
 	mutex := r.Mutexes.For(cluster.Namespace + ":" + cluster.Name)
 	hasMutex := mutex.TryLock()
 	if !hasMutex {
 		// another operation is ongoing for this cluster
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 	defer mutex.Unlock()
 
@@ -185,7 +185,7 @@ func (r *NodeReconciler) handleNodeReset(
 
 		_, err = talosClient.MachineClient.Version(ttCtx, nil)
 		if err == nil {
-			return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+			return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 		}
 
 		// set node conditions to not ready / not provisioned, assuming the state partition was wiped
@@ -275,5 +275,5 @@ func (r *NodeReconciler) handleNodeReset(
 		}
 	}
 
-	return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+	return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 }

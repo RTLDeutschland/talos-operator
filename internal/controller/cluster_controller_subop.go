@@ -145,7 +145,7 @@ func (r *ClusterReconciler) runSubOperations(
 			if err != nil {
 				return nil, fmt.Errorf("error updating cluster operation status: %w", err)
 			}
-			return &reconcile.Result{RequeueAfter: RequeueShortDelay}, nil
+			return &reconcile.Result{RequeueAfter: Requeue5s}, nil
 		}
 
 		// monitor the node operation
@@ -208,7 +208,7 @@ func (r *ClusterReconciler) runSubOperations(
 					return nil, nil
 				}
 
-				return &reconcile.Result{RequeueAfter: RequeueShortDelay}, nil
+				return &reconcile.Result{RequeueAfter: Requeue5s}, nil
 			}
 		}
 
@@ -231,7 +231,7 @@ func (r *ClusterReconciler) runSubOperations(
 			return nil, nil
 		}
 
-		return &reconcile.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &reconcile.Result{RequeueAfter: Requeue5s}, nil
 	}
 
 	return nil, nil

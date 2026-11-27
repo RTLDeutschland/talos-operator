@@ -49,7 +49,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 		return nil, fmt.Errorf("error checking for other operations in progress: %w", err)
 	}
 	if otherOpsInProgress {
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 	}
 
 	// handle both operation types
@@ -60,7 +60,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 		hasMutex := mutex.TryLock()
 		if !hasMutex {
 			// another operation is ongoing for this cluster
-			return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+			return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 		}
 		defer mutex.Unlock()
 	case NodeOperationTypeApply:
@@ -111,7 +111,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 		if strings.HasSuffix(err.Error(), "connect: connection refused") &&
 			time.Since(opStatus.LastTransitionTime.Time) < 5*time.Minute {
 			log.Debug().Err(err).Msg("Temporary connection error, will retry shortly")
-			return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+			return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 		}
 
 		if err := r.updateOpStatus(
@@ -190,7 +190,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 			}
 		}
 
-		return &ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+		return &ctrl.Result{RequeueAfter: Requeue1s}, nil
 
 	case NodeOperationPhaseUpgradeDrain:
 		res, err := r.doNodeDrain(
@@ -267,7 +267,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 			}
 		}
 
-		return &ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+		return &ctrl.Result{RequeueAfter: Requeue1s}, nil
 
 	case NodeOperationPhaseUpgrade113ImagePull:
 		respStream, err := talosClient.ImageClient.Pull(tCtx, &machine.ImageServicePullRequest{
@@ -337,7 +337,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 		); err != nil {
 			return nil, fmt.Errorf("error updating operation status: %w", err)
 		}
-		return &ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+		return &ctrl.Result{RequeueAfter: Requeue1s}, nil
 
 	case NodeOperationPhaseUpgrade113Upgrade:
 		// same deal as with GRPC image pull, just for the upgrade API
@@ -460,7 +460,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 		if err != nil {
 			return nil, fmt.Errorf("error updating operation status: %w", err)
 		}
-		return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+		return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 
 	case NodeOperationPhaseUpgradeVerifying:
 		// check phase timeout
@@ -482,7 +482,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 		ok := r.hasNodeRebootedYet(tCtx, talosClient, remoteClient, node)
 		if !ok {
 			// not rebooted yet, so we requeue to check again later
-			return &ctrl.Result{RequeueAfter: RequeueShortDelay}, nil
+			return &ctrl.Result{RequeueAfter: Requeue5s}, nil
 		}
 
 		// check that image now matches the desired image
@@ -544,7 +544,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 			return nil, fmt.Errorf("error updating operation status: %w", err)
 		}
 
-		return &ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+		return &ctrl.Result{RequeueAfter: Requeue1s}, nil
 
 	case NodeOperationPhaseUpgradeUncordon:
 		// finish the upgrade by uncordoning the node again
@@ -572,7 +572,7 @@ func (r *NodeReconciler) handleNodeUpgrade(
 			if err != nil {
 				return nil, fmt.Errorf("error updating operation status: %w", err)
 			}
-			return &ctrl.Result{RequeueAfter: RequeueImmediate}, nil
+			return &ctrl.Result{RequeueAfter: Requeue1s}, nil
 		}
 
 		err = r.updateOpStatus(

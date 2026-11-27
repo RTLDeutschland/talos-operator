@@ -2,12 +2,13 @@ package constants
 
 // Cluster operation phases:
 const (
-	ClusterOperationPhasePending    = "Pending"
-	ClusterOperationPhasePreflight  = "Preflight"
-	ClusterOperationPhaseInProgress = "InProgress"
-	ClusterOperationPhasePostflight = "Postflight"
-	ClusterOperationPhaseDone       = "Done"
-	ClusterOperationPhaseFailed     = "Failed"
+	ClusterOperationPhasePending     = "Pending"
+	ClusterOperationPhasePreflight   = "Preflight"
+	ClusterOperationPhaseInProgress  = "InProgress"
+	ClusterOperationPhasePostflight  = "Postflight"
+	ClusterOperationPhaseDone        = "Done"
+	ClusterOperationPhaseFailed      = "Failed"
+	ClusterSubOperationPhaseApplying = "Applying"
 )
 
 // Cluster operation types:

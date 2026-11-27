@@ -7,16 +7,10 @@ import (
 	"time"
 
 	talosv1alpha1 "github.com/RTLDeutschland/talos-operator/api/v1alpha1"
-	. "github.com/RTLDeutschland/talos-operator/api/v1alpha1/constants"
 	"go.yaml.in/yaml/v4"
 )
 
 type KV map[string]any
-
-const (
-	Controlplane = NodeRoleControlplane
-	Worker       = NodeRoleWorker
-)
 
 // mustYaml marshals a map into a YAML string, panicking if the marshaling fails.
 func mustYaml(in map[string]any) string {

@@ -7,7 +7,6 @@ import (
 
 	talosconfig "github.com/siderolabs/talos/pkg/machinery/config"
 	talossecrets "github.com/siderolabs/talos/pkg/machinery/config/generate/secrets"
-	"github.com/siderolabs/talos/pkg/machinery/constants"
 	"go.yaml.in/yaml/v4"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,8 +23,6 @@ import (
 	"github.com/RTLDeutschland/talos-operator/internal/keyedmutex"
 	"github.com/RTLDeutschland/talos-operator/internal/logz"
 )
-
-const DefaultKubernetesVersion = "v" + constants.DefaultKubernetesVersion
 
 // ClusterReconciler reconciles a Cluster object by managing its state and coordinating
 // cluster-wide operations such as rolling reboots, rolling applies, and Kubernetes upgrades.

@@ -17,10 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const (
-	SubOpPhaseApplying = "Applying"
-)
-
 // runSubOperations processes the sub-operations of a cluster operation.
 // takes phase InProgress and returns with phase Postflight when done.
 func (r *ClusterReconciler) runSubOperations(
@@ -130,7 +126,7 @@ func (r *ClusterReconciler) runSubOperations(
 				)
 			}
 
-			subOp.Phase = SubOpPhaseApplying
+			subOp.Phase = ClusterSubOperationPhaseApplying
 			subOp.LastTransitionTime = metav1.Now()
 			subOp.Reason = OperationReasonStarted
 			subOp.Message = "Node operation has been started"
@@ -150,7 +146,7 @@ func (r *ClusterReconciler) runSubOperations(
 
 		// monitor the node operation
 		nodeOp := ptr.Deref(node.Status.Operation, talosv1alpha1.NodeOperationStatus{})
-		if subOp.Phase == SubOpPhaseApplying {
+		if subOp.Phase == ClusterSubOperationPhaseApplying {
 			// check if the node operation is done
 			if nodeOp.Phase == NodeOperationPhaseDone || nodeOp.Phase == NodeOperationPhaseFailed {
 				// operation is done
